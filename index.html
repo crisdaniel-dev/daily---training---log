@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+<title>Training Log</title>
+<meta name="theme-color" content="#12151a" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Training Log" />
+<link rel="manifest" href="manifest.json" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<link rel="icon" href="icon-192.png" />
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("service-worker.js").catch((e) => console.error("SW register failed", e));
+    });
+  }
+</script>
+<style>
+  html, body { margin: 0; padding: 0; background: #12151a; }
+  * { -webkit-tap-highlight-color: transparent; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useCallback } = React;
+
+const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const DAY_LABELS = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
+
+function todayKey(d = new Date()) {
+  return d.toISOString().slice(0, 10);
+}
+function dateLabel(key) {
+  const d = new Date(key + "T00:00:00");
+  return `${DAY_LABELS[d.getDay()]} · ${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+const WATER_GOAL_ML = 3200;
+
+const emptyDay = () => ({
+  waterMl: 0,
+  creatineTaken: false,
+  meals: [],
+  chores: [],
+  sleepHours: null,
+});
+
+const DEFAULT_SCHEDULE = DAYS.map((d, i) => ({
+  day: d,
+  hasClass: i >= 1 && i <= 5,
+  gym: i >= 1 && i <= 5,
+  note: i >= 1 && i <= 5 ? "Gym after class, evening" : "Rest / flexible",
+}));
+
+const DEFAULT_CHORES = ["Walk the dog", "Water the plants", "Cook rice", "Store errand"];
+
+function storageGet(key) {
+  try {
+    const v = localStorage.getItem(key);
+    return v ? JSON.parse(v) : null;
+  } catch {
+    return null;
+  }
+}
+function storageSet(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (e) {
+    console.error("storage set failed", key, e);
+  }
+}
+
+// Simple icon wrapper using emoji so we don't need an icon library
+function Icon({ children }) {
+  return <span style={{ display: "inline-flex", fontSize: 14, lineHeight: 1 }}>{children}</span>;
+}
+
+function TrainingLog() {
+  const [ready, setReady] = useState(false);
+  const [tab, setTab] = useState("today");
+  const [schedule, setSchedule] = useState(DEFAULT_SCHEDULE);
+  const [dayKey, setDayKey] = useState(todayKey());
+  const [dayLog, setDayLog] = useState(emptyDay());
+  const [exercises, setExercises] = useState([]);
+  const [workoutLog, setWorkoutLog] = useState([]);
+
+  useEffect(() => {
+    const sched = storageGet("weekly-schedule");
+    const log = storageGet(`daily-log:${dayKey}`);
+    const ex = storageGet("exercise-list");
+    const wlog = storageGet("workout-log");
+    if (sched) setSchedule(sched);
+    if (log) setDayLog({ ...emptyDay(), ...log });
+    if (ex) setExercises(ex);
+    if (wlog) setWorkoutLog(wlog);
+    setReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!ready) return;
+    const log = storageGet(`daily-log:${dayKey}`);
+    setDayLog(log ? { ...emptyDay(), ...log } : emptyDay());
+  }, [dayKey, ready]);
+
+  const saveDayLog = useCallback((next) => {
+    setDayLog(next);
+    storageSet(`daily-log:${dayKey}`, next);
+  }, [dayKey]);
+
+  const saveSchedule = (next) => { setSchedule(next); storageSet("weekly-schedule", next); };
+  const saveWorkoutLog = (next) => { setWorkoutLog(next); storageSet("workout-log", next); };
+  const saveExercises = (next) => { setExercises(next); storageSet("exercise-list", next); };
+
+  if (!ready) {
+    return (
+      <div style={S.loadingScreen}>
+        <div style={S.loadingPlate} />
+        <div style={S.loadingText}>LOADING LOG…</div>
+      </div>
+    );
+  }
+
+  const todayIdx = new Date(dayKey + "T00:00:00").getDay();
+  const todaySchedule = schedule[todayIdx];
+
+  return (
+    <div style={S.app}>
+      <Header dayKey={dayKey} setDayKey={setDayKey} todaySchedule={todaySchedule} />
+      <div style={S.content}>
+        {tab === "today" && (
+          <TodayTab dayLog={dayLog} todaySchedule={todaySchedule} workoutLog={workoutLog} dayKey={dayKey} />
+        )}
+        {tab === "schedule" && <ScheduleTab schedule={schedule} saveSchedule={saveSchedule} />}
+        {tab === "workout" && (
+          <WorkoutTab dayKey={dayKey} exercises={exercises} saveExercises={saveExercises} workoutLog={workoutLog} saveWorkoutLog={saveWorkoutLog} />
+        )}
+        {tab === "hydration" && <HydrationTab dayLog={dayLog} saveDayLog={saveDayLog} />}
+        {tab === "meals" && <MealsTab dayLog={dayLog} saveDayLog={saveDayLog} />}
+        {tab === "chores" && <ChoresTab dayLog={dayLog} saveDayLog={saveDayLog} />}
+      </div>
+      <BottomNav tab={tab} setTab={setTab} />
+    </div>
+  );
+}
+
+function Header({ dayKey, setDayKey, todaySchedule }) {
+  const shift = (delta) => {
+    const d = new Date(dayKey + "T00:00:00");
+    d.setDate(d.getDate() + delta);
+    setDayKey(todayKey(d));
+  };
+  const isToday = dayKey === todayKey();
+  return (
+    <div style={S.header}>
+      <div style={S.headerTop}>
+        <div style={S.brand}><span style={S.brandMark}>◆</span> TRAINING LOG</div>
+        <div style={S.dateNav}>
+          <button style={S.dateNavBtn} onClick={() => shift(-1)}>‹</button>
+          <button style={{ ...S.dateNavLabel, opacity: isToday ? 1 : 0.65 }} onClick={() => setDayKey(todayKey())}>
+            {dateLabel(dayKey)}
+          </button>
+          <button style={S.dateNavBtn} onClick={() => shift(1)}>›</button>
+        </div>
+      </div>
+      {todaySchedule && (
+        <div style={S.headerSub}>
+          {todaySchedule.hasClass ? "Class day" : "No class"} · {todaySchedule.gym ? "Gym: " + (todaySchedule.note || "yes") : "No gym scheduled"}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TodayTab({ dayLog, todaySchedule, workoutLog, dayKey }) {
+  const todaysSets = workoutLog.filter((w) => w.date === dayKey);
+  const proteinTotal = dayLog.meals.reduce((s, m) => s + (Number(m.protein) || 0), 0);
+  const waterPct = Math.min(100, Math.round((dayLog.waterMl / WATER_GOAL_ML) * 100));
+  return (
+    <div style={S.tabPane}>
+      <SectionLabel icon="📅" text="Today" />
+      <div style={S.card}>
+        <div style={S.cardRow}>
+          <StatBlock label="Water" value={`${(dayLog.waterMl / 1000).toFixed(1)}L`} sub={`${waterPct}% of goal`} />
+          <StatBlock label="Creatine" value={dayLog.creatineTaken ? "Taken" : "Not yet"} sub={dayLog.creatineTaken ? "✓ logged" : "—"} accent={dayLog.creatineTaken} />
+          <StatBlock label="Protein" value={`${proteinTotal}g`} sub={`${dayLog.meals.length} meal${dayLog.meals.length === 1 ? "" : "s"}`} />
+        </div>
+      </div>
+      <SectionLabel icon="🏋" text="Workout" />
+      <div style={S.card}>
+        {todaysSets.length === 0 ? (
+          <EmptyState text={todaySchedule?.gym ? "No sets logged yet today. Go to Workout to add one." : "No gym scheduled today."} />
+        ) : (
+          <div style={S.plainList}>
+            {todaysSets.map((w) => (
+              <div key={w.id} style={S.workoutRow}>
+                <span style={S.workoutRowName}>{w.exercise}</span>
+                <span style={S.mono}>{w.sets}×{w.reps} @ {w.weight}kg</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      <SectionLabel icon="🌙" text="Recovery" />
+      <div style={S.card}>
+        <div style={S.cardRow}>
+          <StatBlock label="Sleep" value={dayLog.sleepHours != null ? `${dayLog.sleepHours}h` : "—"} sub="last night" />
+          <StatBlock label="Chores" value={`${dayLog.chores.filter((c) => c.done).length}/${dayLog.chores.length}`} sub="done today" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StatBlock({ label, value, sub, accent }) {
+  return (
+    <div style={S.statBlock}>
+      <div style={S.statLabel}>{label}</div>
+      <div style={{ ...S.statValue, color: accent ? T.accent : T.text }}>{value}</div>
+      <div style={S.statSub}>{sub}</div>
+    </div>
+  );
+}
+
+function ScheduleTab({ schedule, saveSchedule }) {
+  const update = (idx, patch) => {
+    const next = schedule.map((s, i) => (i === idx ? { ...s, ...patch } : s));
+    saveSchedule(next);
+  };
+  return (
+    <div style={S.tabPane}>
+      <SectionLabel icon="📅" text="Weekly Schedule" />
+      <div style={S.plainList}>
+        {schedule.map((s, i) => (
+          <div key={s.day} style={S.scheduleCard}>
+            <div style={S.scheduleTop}>
+              <span style={S.scheduleDay}>{DAY_LABELS[i]}</span>
+              <label style={S.toggleLabel}>
+                <input type="checkbox" checked={s.hasClass} onChange={(e) => update(i, { hasClass: e.target.checked })} style={S.checkbox} />
+                Class
+              </label>
+              <label style={S.toggleLabel}>
+                <input type="checkbox" checked={s.gym} onChange={(e) => update(i, { gym: e.target.checked })} style={S.checkbox} />
+                Gym
+              </label>
+            </div>
+            <input style={S.noteInput} value={s.note} onChange={(e) => update(i, { note: e.target.value })} placeholder="Note (e.g. after class, evening)" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function WorkoutTab({ dayKey, exercises, saveExercises, workoutLog, saveWorkoutLog }) {
+  const [name, setName] = useState("");
+  const [sets, setSets] = useState("3");
+  const [reps, setReps] = useState("10");
+  const [weight, setWeight] = useState("20");
+
+  const addEntry = () => {
+    const exName = name.trim();
+    if (!exName) return;
+    const entry = { id: `${Date.now()}`, date: dayKey, exercise: exName, sets: Number(sets) || 0, reps: Number(reps) || 0, weight: Number(weight) || 0 };
+    saveWorkoutLog([entry, ...workoutLog]);
+    if (!exercises.includes(exName)) saveExercises([exName, ...exercises].slice(0, 30));
+    setName("");
+  };
+  const removeEntry = (id) => saveWorkoutLog(workoutLog.filter((w) => w.id !== id));
+  const todaysSets = workoutLog.filter((w) => w.date === dayKey);
+  const history = workoutLog.filter((w) => w.date !== dayKey).slice(0, 40);
+
+  return (
+    <div style={S.tabPane}>
+      <SectionLabel icon="🏋" text="Log a Set" />
+      <div style={S.card}>
+        <div style={S.fieldGroup}>
+          <span style={S.fieldLabel}>Exercise</span>
+          <input style={S.textInput} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Dumbbell Bench Press" list="exercise-suggestions" />
+          <datalist id="exercise-suggestions">
+            {exercises.map((ex) => <option key={ex} value={ex} />)}
+          </datalist>
+        </div>
+        <div style={S.cardRow}>
+          <NumField label="Sets" value={sets} setValue={setSets} />
+          <NumField label="Reps" value={reps} setValue={setReps} />
+          <NumField label="Weight (kg)" value={weight} setValue={setWeight} step="0.5" />
+        </div>
+        <button style={S.primaryBtn} onClick={addEntry}>+ Add Set</button>
+      </div>
+      <SectionLabel icon="🔥" text={`Today · ${todaysSets.length} set${todaysSets.length === 1 ? "" : "s"}`} />
+      <div style={S.card}>
+        {todaysSets.length === 0 ? (
+          <EmptyState text="Nothing logged yet — add your first set above." />
+        ) : (
+          <div style={S.plainList}>
+            {todaysSets.map((w) => (
+              <div key={w.id} style={S.workoutRow}>
+                <span style={S.workoutRowName}>{w.exercise}</span>
+                <span style={S.mono}>{w.sets}×{w.reps} @ {w.weight}kg</span>
+                <button style={S.iconBtn} onClick={() => removeEntry(w.id)}>✕</button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      {history.length > 0 && (
+        <>
+          <SectionLabel icon="📅" text="History" />
+          <div style={S.card}>
+            <div style={S.plainList}>
+              {history.map((w) => (
+                <div key={w.id} style={S.workoutRow}>
+                  <span style={S.workoutRowDate}>{w.date.slice(5)}</span>
+                  <span style={S.workoutRowName}>{w.exercise}</span>
+                  <span style={S.mono}>{w.sets}×{w.reps} @ {w.weight}kg</span>
+                  <button style={S.iconBtn} onClick={() => removeEntry(w.id)}>✕</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function NumField({ label, value, setValue, step }) {
+  return (
+    <div style={S.numField}>
+      <span style={S.fieldLabel}>{label}</span>
+      <input style={S.numInput} type="number" step={step || "1"} min="0" value={value} onChange={(e) => setValue(e.target.value)} />
+    </div>
+  );
+}
+
+function HydrationTab({ dayLog, saveDayLog }) {
+  const pct = Math.min(1, dayLog.waterMl / WATER_GOAL_ML);
+  const addWater = (ml) => saveDayLog({ ...dayLog, waterMl: Math.max(0, dayLog.waterMl + ml) });
+  const toggleCreatine = () => saveDayLog({ ...dayLog, creatineTaken: !dayLog.creatineTaken });
+  const r = 54; const c = 2 * Math.PI * r;
+  return (
+    <div style={S.tabPane}>
+      <SectionLabel icon="💧" text="Hydration" />
+      <div style={{ ...S.card, alignItems: "center" }}>
+        <div style={S.plateWrap}>
+          <svg width="140" height="140" viewBox="0 0 140 140">
+            <circle cx="70" cy="70" r={r} fill="none" stroke={T.line} strokeWidth="10" />
+            <circle cx="70" cy="70" r={r} fill="none" stroke={T.water} strokeWidth="10"
+              strokeDasharray={c} strokeDashoffset={c - c * pct} strokeLinecap="round"
+              transform="rotate(-90 70 70)" style={{ transition: "stroke-dashoffset 0.4s ease" }} />
+          </svg>
+          <div style={S.plateCenter}>
+            <div style={S.plateValue}>{(dayLog.waterMl / 1000).toFixed(1)}L</div>
+            <div style={S.plateGoal}>of {(WATER_GOAL_ML / 1000).toFixed(1)}L</div>
+          </div>
+        </div>
+        <div style={S.quickAddRow}>
+          {[250, 500, 1000].map((ml) => (
+            <button key={ml} style={S.quickAddBtn} onClick={() => addWater(ml)}>+{ml}ml</button>
+          ))}
+          <button style={S.quickAddBtnGhost} onClick={() => addWater(-250)}>−250ml</button>
+        </div>
+      </div>
+      <SectionLabel icon="🔥" text="Creatine" />
+      <div style={S.card}>
+        <button style={{ ...S.creatineBtn, ...(dayLog.creatineTaken ? S.creatineBtnActive : {}) }} onClick={toggleCreatine}>
+          <span style={S.creatineCheck}>{dayLog.creatineTaken ? "✓" : ""}</span>
+          {dayLog.creatineTaken ? "Creatine taken today" : "Mark creatine as taken"}
+        </button>
+        <div style={S.hint}>3–5g, once daily — pair with breakfast for consistency.</div>
+      </div>
+    </div>
+  );
+}
+
+function MealsTab({ dayLog, saveDayLog }) {
+  const [name, setName] = useState("");
+  const [protein, setProtein] = useState("");
+  const addMeal = () => {
+    const n = name.trim();
+    if (!n) return;
+    const meal = { id: `${Date.now()}`, name: n, protein: Number(protein) || 0 };
+    saveDayLog({ ...dayLog, meals: [meal, ...dayLog.meals] });
+    setName(""); setProtein("");
+  };
+  const removeMeal = (id) => saveDayLog({ ...dayLog, meals: dayLog.meals.filter((m) => m.id !== id) });
+  const total = dayLog.meals.reduce((s, m) => s + (Number(m.protein) || 0), 0);
+  return (
+    <div style={S.tabPane}>
+      <SectionLabel icon="🍽" text="Log a Meal" />
+      <div style={S.card}>
+        <div style={S.fieldGroup}>
+          <span style={S.fieldLabel}>Meal</span>
+          <input style={S.textInput} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Rice + 4 eggs" />
+        </div>
+        <div style={S.fieldGroup}>
+          <span style={S.fieldLabel}>Protein (g, estimate)</span>
+          <input style={S.textInput} type="number" min="0" value={protein} onChange={(e) => setProtein(e.target.value)} placeholder="e.g. 24" />
+        </div>
+        <button style={S.primaryBtn} onClick={addMeal}>+ Add Meal</button>
+      </div>
+      <SectionLabel icon="🔥" text={`Today's protein · ${total}g`} />
+      <div style={S.card}>
+        {dayLog.meals.length === 0 ? (
+          <EmptyState text="No meals logged yet today." />
+        ) : (
+          <div style={S.plainList}>
+            {dayLog.meals.map((m) => (
+              <div key={m.id} style={S.workoutRow}>
+                <span style={S.workoutRowName}>{m.name}</span>
+                <span style={S.mono}>{m.protein}g</span>
+                <button style={S.iconBtn} onClick={() => removeMeal(m.id)}>✕</button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ChoresTab({ dayLog, saveDayLog }) {
+  const [newChore, setNewChore] = useState("");
+  const seedDefaults = () => {
+    saveDayLog({ ...dayLog, chores: DEFAULT_CHORES.map((c, i) => ({ id: `seed-${i}`, text: c, done: false })) });
+  };
+  const toggleChore = (id) => saveDayLog({ ...dayLog, chores: dayLog.chores.map((c) => (c.id === id ? { ...c, done: !c.done } : c)) });
+  const addChore = () => {
+    const t = newChore.trim();
+    if (!t) return;
+    saveDayLog({ ...dayLog, chores: [...dayLog.chores, { id: `${Date.now()}`, text: t, done: false }] });
+    setNewChore("");
+  };
+  const removeChore = (id) => saveDayLog({ ...dayLog, chores: dayLog.chores.filter((c) => c.id !== id) });
+  const setSleep = (h) => saveDayLog({ ...dayLog, sleepHours: h });
+
+  return (
+    <div style={S.tabPane}>
+      <SectionLabel icon="✅" text="Chores" />
+      <div style={S.card}>
+        {dayLog.chores.length === 0 && (
+          <>
+            <EmptyState text="No chores added for today." />
+            <button style={S.ghostBtn} onClick={seedDefaults}>Load usual chores (dog, plants, rice, errand)</button>
+          </>
+        )}
+        {dayLog.chores.length > 0 && (
+          <div style={S.plainList}>
+            {dayLog.chores.map((c) => (
+              <div key={c.id} style={S.choreRow}>
+                <button style={S.choreCheckBtn} onClick={() => toggleChore(c.id)}>
+                  <span style={{ ...S.choreCheckbox, ...(c.done ? S.choreCheckboxDone : {}) }}>{c.done ? "✓" : ""}</span>
+                  <span style={{ ...S.choreText, ...(c.done ? S.choreTextDone : {}) }}>{c.text}</span>
+                </button>
+                <button style={S.iconBtn} onClick={() => removeChore(c.id)}>✕</button>
+              </div>
+            ))}
+          </div>
+        )}
+        <div style={S.addChoreRow}>
+          <input style={S.textInput} value={newChore} onChange={(e) => setNewChore(e.target.value)} placeholder="Add a task…" onKeyDown={(e) => e.key === "Enter" && addChore()} />
+          <button style={S.iconAddBtn} onClick={addChore}>+</button>
+        </div>
+      </div>
+      <SectionLabel icon="🌙" text="Sleep last night" />
+      <div style={S.card}>
+        <div style={S.sleepRow}>
+          {[5, 6, 7, 8, 9, 10].map((h) => (
+            <button key={h} style={{ ...S.sleepChip, ...(dayLog.sleepHours === h ? S.sleepChipActive : {}) }} onClick={() => setSleep(h)}>{h}h</button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SectionLabel({ icon, text }) {
+  return <div style={S.sectionLabel}><span>{icon}</span><span>{text}</span></div>;
+}
+function EmptyState({ text }) {
+  return <div style={S.emptyState}>{text}</div>;
+}
+
+function BottomNav({ tab, setTab }) {
+  const items = [
+    { id: "today", label: "Today", icon: "📅" },
+    { id: "workout", label: "Workout", icon: "🏋" },
+    { id: "hydration", label: "Hydrate", icon: "💧" },
+    { id: "meals", label: "Meals", icon: "🍽" },
+    { id: "chores", label: "Chores", icon: "✅" },
+    { id: "schedule", label: "Week", icon: "🗓" },
+  ];
+  return (
+    <div style={S.bottomNav}>
+      {items.map((it) => {
+        const active = tab === it.id;
+        return (
+          <button key={it.id} style={{ ...S.navBtn, color: active ? T.accent : T.textMuted }} onClick={() => setTab(it.id)}>
+            <span style={{ fontSize: 18 }}>{it.icon}</span>
+            <span style={{ ...S.navLabel, opacity: active ? 1 : 0.75 }}>{it.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+const T = {
+  bg: "#12151a", surface: "#1b2028", surfaceRaised: "#232a33", line: "#2c3440",
+  text: "#ecebe4", textMuted: "#8b95a3", accent: "#ff5330", accent2: "#f2b93c",
+  water: "#4fb8c9", good: "#5fbf82",
+};
+
+const S = {
+  app: { fontFamily: "'Inter', sans-serif", background: T.bg, color: T.text, minHeight: "100vh", maxWidth: 480, margin: "0 auto", display: "flex", flexDirection: "column", position: "relative" },
+  loadingScreen: { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100vh", background: T.bg, color: T.textMuted, fontFamily: "'Inter', sans-serif", gap: 12 },
+  loadingPlate: { width: 36, height: 36, borderRadius: "50%", border: `4px solid ${T.line}`, borderTopColor: T.accent, animation: "spin 0.9s linear infinite" },
+  loadingText: { fontSize: 12, letterSpacing: "0.12em" },
+  header: { padding: "18px 18px 12px", borderBottom: `1px solid ${T.line}`, position: "sticky", top: 0, background: T.bg, zIndex: 5 },
+  headerTop: { display: "flex", alignItems: "center", justifyContent: "space-between" },
+  brand: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 19, letterSpacing: "0.08em", color: T.text, display: "flex", alignItems: "center", gap: 6 },
+  brandMark: { color: T.accent, fontSize: 12 },
+  dateNav: { display: "flex", alignItems: "center", gap: 4 },
+  dateNavBtn: { background: "none", border: "none", color: T.textMuted, fontSize: 20, width: 26, height: 26, cursor: "pointer", lineHeight: 1 },
+  dateNavLabel: { background: "none", border: "none", color: T.text, fontSize: 11, letterSpacing: "0.06em", fontFamily: "'IBM Plex Mono', monospace", cursor: "pointer", padding: "4px 2px" },
+  headerSub: { marginTop: 6, fontSize: 12, color: T.textMuted },
+  content: { flex: 1, padding: "16px 16px 90px", overflowY: "auto" },
+  tabPane: { display: "flex", flexDirection: "column", gap: 8 },
+  sectionLabel: { display: "flex", alignItems: "center", gap: 6, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: T.textMuted, marginTop: 14, marginBottom: 2 },
+  card: { background: T.surface, border: `1px solid ${T.line}`, borderRadius: 14, padding: 16, display: "flex", flexDirection: "column", gap: 12 },
+  cardRow: { display: "flex", gap: 10 },
+  statBlock: { flex: 1, display: "flex", flexDirection: "column", gap: 2 },
+  statLabel: { fontSize: 10, letterSpacing: "0.08em", color: T.textMuted, textTransform: "uppercase" },
+  statValue: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, letterSpacing: "0.02em" },
+  statSub: { fontSize: 11, color: T.textMuted },
+  plainList: { display: "flex", flexDirection: "column", gap: 8 },
+  workoutRow: { display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", background: T.surfaceRaised, borderRadius: 10 },
+  workoutRowName: { flex: 1, fontSize: 13.5, fontWeight: 500 },
+  workoutRowDate: { fontSize: 10, color: T.textMuted, fontFamily: "'IBM Plex Mono', monospace", width: 32 },
+  mono: { fontFamily: "'IBM Plex Mono', monospace", fontSize: 12.5, color: T.accent2 },
+  iconBtn: { background: "none", border: "none", color: T.textMuted, cursor: "pointer", padding: 4, display: "flex" },
+  iconAddBtn: { background: T.accent, border: "none", color: "#1a0d08", cursor: "pointer", borderRadius: 10, width: 40, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 },
+  emptyState: { fontSize: 13, color: T.textMuted, padding: "10px 2px" },
+  fieldGroup: { display: "flex", flexDirection: "column", gap: 5 },
+  fieldLabel: { fontSize: 10.5, letterSpacing: "0.06em", color: T.textMuted, textTransform: "uppercase" },
+  textInput: { background: T.surfaceRaised, border: `1px solid ${T.line}`, borderRadius: 9, padding: "10px 12px", color: T.text, fontSize: 14, fontFamily: "'Inter', sans-serif", outline: "none", width: "100%", boxSizing: "border-box" },
+  numField: { flex: 1, display: "flex", flexDirection: "column", gap: 5 },
+  numInput: { background: T.surfaceRaised, border: `1px solid ${T.line}`, borderRadius: 9, padding: "10px 8px", color: T.text, fontSize: 14, fontFamily: "'IBM Plex Mono', monospace", outline: "none", width: "100%", boxSizing: "border-box", textAlign: "center" },
+  primaryBtn: { background: T.accent, border: "none", borderRadius: 10, color: "#1a0d08", fontWeight: 700, fontSize: 14, padding: "11px 14px", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, cursor: "pointer" },
+  ghostBtn: { background: "none", border: `1px dashed ${T.line}`, borderRadius: 10, color: T.textMuted, fontSize: 12.5, padding: "10px 12px", cursor: "pointer", marginTop: 6 },
+  scheduleCard: { background: T.surface, border: `1px solid ${T.line}`, borderRadius: 12, padding: 12, display: "flex", flexDirection: "column", gap: 8 },
+  scheduleTop: { display: "flex", alignItems: "center", gap: 14 },
+  scheduleDay: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 15, letterSpacing: "0.04em", flex: 1 },
+  toggleLabel: { display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: T.textMuted },
+  checkbox: { width: 15, height: 15, accentColor: T.accent },
+  noteInput: { background: T.surfaceRaised, border: `1px solid ${T.line}`, borderRadius: 8, padding: "7px 10px", color: T.text, fontSize: 12.5, outline: "none", width: "100%", boxSizing: "border-box" },
+  plateWrap: { position: "relative", width: 140, height: 140, alignSelf: "center" },
+  plateCenter: { position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" },
+  plateValue: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 30 },
+  plateGoal: { fontSize: 11, color: T.textMuted, marginTop: 2 },
+  quickAddRow: { display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" },
+  quickAddBtn: { background: T.water, border: "none", borderRadius: 9, color: "#062229", fontWeight: 700, fontSize: 12.5, padding: "9px 12px", cursor: "pointer" },
+  quickAddBtnGhost: { background: "none", border: `1px solid ${T.line}`, borderRadius: 9, color: T.textMuted, fontSize: 12.5, padding: "9px 12px", cursor: "pointer" },
+  creatineBtn: { display: "flex", alignItems: "center", gap: 10, background: T.surfaceRaised, border: `1px solid ${T.line}`, borderRadius: 12, padding: "13px 14px", color: T.text, fontSize: 14, fontWeight: 500, cursor: "pointer", width: "100%" },
+  creatineBtnActive: { background: "rgba(95,191,130,0.12)", border: `1px solid ${T.good}`, color: T.good },
+  creatineCheck: { width: 20, height: 20, borderRadius: 6, border: `1.5px solid currentColor`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
+  hint: { fontSize: 11.5, color: T.textMuted, marginTop: 8 },
+  choreRow: { display: "flex", alignItems: "center", gap: 8 },
+  choreCheckBtn: { flex: 1, display: "flex", alignItems: "center", gap: 10, background: T.surfaceRaised, border: `1px solid ${T.line}`, borderRadius: 10, padding: "10px 12px", cursor: "pointer", textAlign: "left" },
+  choreCheckbox: { width: 18, height: 18, borderRadius: 5, border: `1.5px solid ${T.textMuted}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: T.text },
+  choreCheckboxDone: { background: T.good, borderColor: T.good, color: "#0a1a10" },
+  choreText: { fontSize: 13.5, color: T.text },
+  choreTextDone: { color: T.textMuted, textDecoration: "line-through" },
+  addChoreRow: { display: "flex", gap: 8, marginTop: 4 },
+  sleepRow: { display: "flex", gap: 8, flexWrap: "wrap" },
+  sleepChip: { background: T.surfaceRaised, border: `1px solid ${T.line}`, borderRadius: 9, color: T.text, fontSize: 13, fontFamily: "'IBM Plex Mono', monospace", padding: "9px 14px", cursor: "pointer" },
+  sleepChipActive: { background: T.accent2, borderColor: T.accent2, color: "#241a04", fontWeight: 700 },
+  bottomNav: { position: "sticky", bottom: 0, display: "flex", justifyContent: "space-around", padding: "8px 4px 10px", background: T.bg, borderTop: `1px solid ${T.line}` },
+  navBtn: { background: "none", border: "none", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, cursor: "pointer", padding: "4px 6px" },
+  navLabel: { fontSize: 10 },
+};
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<TrainingLog />);
+</script>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap');
+input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</body>
+</html>
