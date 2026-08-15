@@ -12,593 +12,522 @@
 <link rel="manifest" href="manifest.json" />
 <link rel="apple-touch-icon" href="icon-192.png" />
 <link rel="icon" href="icon-192.png" />
-<script>
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("service-worker.js").catch((e) => console.error("SW register failed", e));
-    });
-  }
-</script>
 <style>
-  html, body { margin: 0; padding: 0; background: #12151a; }
-  * { -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #12151a; --surface: #1b2028; --surface2: #232a33; --line: #2c3440;
+  --text: #ecebe4; --muted: #8b95a3; --accent: #ff5330; --accent2: #f2b93c;
+  --water: #4fb8c9; --good: #5fbf82;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; }
+#app { max-width: 480px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
+
+.header { padding: 18px 18px 12px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--bg); z-index: 5; }
+.header-top { display: flex; align-items: center; justify-content: space-between; }
+.brand { font-size: 19px; font-weight: 800; letter-spacing: 0.06em; display: flex; align-items: center; gap: 6px; }
+.brand-mark { color: var(--accent); font-size: 12px; }
+.date-nav { display: flex; align-items: center; gap: 2px; }
+.date-nav button.arrow { background: none; border: none; color: var(--muted); font-size: 20px; width: 26px; height: 26px; }
+.date-nav button.label { background: none; border: none; color: var(--text); font-size: 11px; letter-spacing: 0.05em; font-family: monospace; padding: 4px 2px; }
+.header-sub { margin-top: 6px; font-size: 12px; color: var(--muted); }
+
+.content { flex: 1; padding: 16px 16px 90px; overflow-y: auto; }
+.tab-pane { display: flex; flex-direction: column; gap: 8px; }
+
+.section-label { display: flex; align-items: center; gap: 6px; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-top: 14px; margin-bottom: 2px; }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.card-row { display: flex; gap: 10px; }
+
+.stat-block { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.stat-label { font-size: 10px; letter-spacing: 0.08em; color: var(--muted); text-transform: uppercase; }
+.stat-value { font-size: 24px; font-weight: 800; }
+.stat-value.accent { color: var(--accent); }
+.stat-sub { font-size: 11px; color: var(--muted); }
+
+.plain-list { display: flex; flex-direction: column; gap: 8px; }
+.row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--surface2); border-radius: 10px; }
+.row-name { flex: 1; font-size: 13.5px; font-weight: 500; }
+.row-date { font-size: 10px; color: var(--muted); font-family: monospace; width: 32px; }
+.mono { font-family: monospace; font-size: 12.5px; color: var(--accent2); }
+.icon-btn { background: none; border: none; color: var(--muted); cursor: pointer; padding: 4px; font-size: 15px; }
+
+.empty-state { font-size: 13px; color: var(--muted); padding: 10px 2px; }
+
+.field-group { display: flex; flex-direction: column; gap: 5px; }
+.field-label { font-size: 10.5px; letter-spacing: 0.06em; color: var(--muted); text-transform: uppercase; }
+.text-input, .note-input {
+  background: var(--surface2); border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px;
+  color: var(--text); font-size: 14px; outline: none; width: 100%; font-family: inherit;
+}
+.num-field { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+.num-input { background: var(--surface2); border: 1px solid var(--line); border-radius: 9px; padding: 10px 8px; color: var(--text); font-size: 14px; font-family: monospace; outline: none; width: 100%; text-align: center; }
+
+.primary-btn { background: var(--accent); border: none; border-radius: 10px; color: #1a0d08; font-weight: 700; font-size: 14px; padding: 11px 14px; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; width: 100%; }
+.ghost-btn { background: none; border: 1px dashed var(--line); border-radius: 10px; color: var(--muted); font-size: 12.5px; padding: 10px 12px; cursor: pointer; margin-top: 6px; width: 100%; }
+
+.schedule-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.schedule-top { display: flex; align-items: center; gap: 14px; }
+.schedule-day { font-size: 15px; font-weight: 700; letter-spacing: 0.03em; flex: 1; }
+.toggle-label { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); }
+.toggle-label input { width: 15px; height: 15px; accent-color: var(--accent); }
+
+.plate-wrap { position: relative; width: 140px; height: 140px; align-self: center; }
+.plate-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.plate-value { font-size: 30px; font-weight: 800; }
+.plate-goal { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.quick-add-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.quick-add-btn { background: var(--water); border: none; border-radius: 9px; color: #062229; font-weight: 700; font-size: 12.5px; padding: 9px 12px; cursor: pointer; }
+.quick-add-ghost { background: none; border: 1px solid var(--line); border-radius: 9px; color: var(--muted); font-size: 12.5px; padding: 9px 12px; cursor: pointer; }
+
+.creatine-btn { display: flex; align-items: center; gap: 10px; background: var(--surface2); border: 1px solid var(--line); border-radius: 12px; padding: 13px 14px; color: var(--text); font-size: 14px; font-weight: 500; cursor: pointer; width: 100%; }
+.creatine-btn.active { background: rgba(95,191,130,0.12); border-color: var(--good); color: var(--good); }
+.creatine-check { width: 20px; height: 20px; border-radius: 6px; border: 1.5px solid currentColor; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 12px; }
+.hint { font-size: 11.5px; color: var(--muted); margin-top: 8px; }
+
+.chore-row { display: flex; align-items: center; gap: 8px; }
+.chore-check-btn { flex: 1; display: flex; align-items: center; gap: 10px; background: var(--surface2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; cursor: pointer; text-align: left; }
+.chore-checkbox { width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid var(--muted); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 11px; }
+.chore-checkbox.done { background: var(--good); border-color: var(--good); color: #0a1a10; }
+.chore-text.done { color: var(--muted); text-decoration: line-through; }
+.add-chore-row { display: flex; gap: 8px; margin-top: 4px; }
+.icon-add-btn { background: var(--accent); border: none; color: #1a0d08; cursor: pointer; border-radius: 10px; width: 40px; font-size: 18px; }
+
+.sleep-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.sleep-chip { background: var(--surface2); border: 1px solid var(--line); border-radius: 9px; color: var(--text); font-size: 13px; font-family: monospace; padding: 9px 14px; cursor: pointer; }
+.sleep-chip.active { background: var(--accent2); border-color: var(--accent2); color: #241a04; font-weight: 700; }
+
+.bottom-nav { position: sticky; bottom: 0; display: flex; justify-content: space-around; padding: 8px 4px 10px; background: var(--bg); border-top: 1px solid var(--line); }
+.nav-btn { background: none; border: none; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; padding: 4px 6px; color: var(--muted); }
+.nav-btn.active { color: var(--accent); }
+.nav-icon { font-size: 18px; }
+.nav-label { font-size: 10px; }
+
+input, textarea, button { font-family: inherit; }
 </style>
 </head>
 <body>
-<div id="root"></div>
+<div id="app"></div>
 
-<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script>
+(function () {
+  "use strict";
 
-<script type="text/babel" data-presets="react">
-const { useState, useEffect, useCallback } = React;
+  var WATER_GOAL_ML = 3200;
+  var DAY_LABELS = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
+  var DEFAULT_CHORES = ["Walk the dog", "Water the plants", "Cook rice", "Store errand"];
 
-const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const DAY_LABELS = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
-
-function todayKey(d = new Date()) {
-  return d.toISOString().slice(0, 10);
-}
-function dateLabel(key) {
-  const d = new Date(key + "T00:00:00");
-  return `${DAY_LABELS[d.getDay()]} · ${d.getMonth() + 1}/${d.getDate()}`;
-}
-
-const WATER_GOAL_ML = 3200;
-
-const emptyDay = () => ({
-  waterMl: 0,
-  creatineTaken: false,
-  meals: [],
-  chores: [],
-  sleepHours: null,
-});
-
-const DEFAULT_SCHEDULE = DAYS.map((d, i) => ({
-  day: d,
-  hasClass: i >= 1 && i <= 5,
-  gym: i >= 1 && i <= 5,
-  note: i >= 1 && i <= 5 ? "Gym after class, evening" : "Rest / flexible",
-}));
-
-const DEFAULT_CHORES = ["Walk the dog", "Water the plants", "Cook rice", "Store errand"];
-
-function storageGet(key) {
-  try {
-    const v = localStorage.getItem(key);
-    return v ? JSON.parse(v) : null;
-  } catch {
-    return null;
+  function todayKey(d) {
+    d = d || new Date();
+    return d.toISOString().slice(0, 10);
   }
-}
-function storageSet(key, value) {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch (e) {
-    console.error("storage set failed", key, e);
+  function dateLabel(key) {
+    var d = new Date(key + "T00:00:00");
+    return DAY_LABELS[d.getDay()] + " · " + (d.getMonth() + 1) + "/" + d.getDate();
   }
-}
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function get(key, fallback) {
+    try {
+      var v = localStorage.getItem(key);
+      return v ? JSON.parse(v) : fallback;
+    } catch (e) { return fallback; }
+  }
+  function set(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { console.error(e); }
+  }
+  function emptyDay() {
+    return { waterMl: 0, creatineTaken: false, meals: [], chores: [], sleepHours: null };
+  }
+  function defaultSchedule() {
+    var arr = [];
+    for (var i = 0; i < 7; i++) {
+      var isWeekday = i >= 1 && i <= 5;
+      arr.push({ hasClass: isWeekday, gym: isWeekday, note: isWeekday ? "Gym after class, evening" : "Rest / flexible" });
+    }
+    return arr;
+  }
 
-// Simple icon wrapper using emoji so we don't need an icon library
-function Icon({ children }) {
-  return <span style={{ display: "inline-flex", fontSize: 14, lineHeight: 1 }}>{children}</span>;
-}
+  var state = {
+    tab: "today",
+    dayKey: todayKey(),
+    schedule: get("weekly-schedule", null) || defaultSchedule(),
+    exercises: get("exercise-list", []),
+    workoutLog: get("workout-log", []),
+    dayLog: null,
+  };
+  state.dayLog = get("daily-log:" + state.dayKey, null) || emptyDay();
 
-function TrainingLog() {
-  const [ready, setReady] = useState(false);
-  const [tab, setTab] = useState("today");
-  const [schedule, setSchedule] = useState(DEFAULT_SCHEDULE);
-  const [dayKey, setDayKey] = useState(todayKey());
-  const [dayLog, setDayLog] = useState(emptyDay());
-  const [exercises, setExercises] = useState([]);
-  const [workoutLog, setWorkoutLog] = useState([]);
+  function saveDayLog(next) {
+    state.dayLog = next;
+    set("daily-log:" + state.dayKey, next);
+    render();
+  }
+  function saveSchedule(next) {
+    state.schedule = next;
+    set("weekly-schedule", next);
+    render();
+  }
+  function saveWorkoutLog(next) {
+    state.workoutLog = next;
+    set("workout-log", next);
+    render();
+  }
+  function saveExercises(next) {
+    state.exercises = next;
+    set("exercise-list", next);
+  }
+  function goToDay(key) {
+    state.dayKey = key;
+    state.dayLog = get("daily-log:" + key, null) || emptyDay();
+    render();
+  }
+  function setTab(t) { state.tab = t; render(); }
 
-  useEffect(() => {
-    const sched = storageGet("weekly-schedule");
-    const log = storageGet(`daily-log:${dayKey}`);
-    const ex = storageGet("exercise-list");
-    const wlog = storageGet("workout-log");
-    if (sched) setSchedule(sched);
-    if (log) setDayLog({ ...emptyDay(), ...log });
-    if (ex) setExercises(ex);
-    if (wlog) setWorkoutLog(wlog);
-    setReady(true);
-  }, []);
-
-  useEffect(() => {
-    if (!ready) return;
-    const log = storageGet(`daily-log:${dayKey}`);
-    setDayLog(log ? { ...emptyDay(), ...log } : emptyDay());
-  }, [dayKey, ready]);
-
-  const saveDayLog = useCallback((next) => {
-    setDayLog(next);
-    storageSet(`daily-log:${dayKey}`, next);
-  }, [dayKey]);
-
-  const saveSchedule = (next) => { setSchedule(next); storageSet("weekly-schedule", next); };
-  const saveWorkoutLog = (next) => { setWorkoutLog(next); storageSet("workout-log", next); };
-  const saveExercises = (next) => { setExercises(next); storageSet("exercise-list", next); };
-
-  if (!ready) {
+  function headerHtml() {
+    var d = new Date(state.dayKey + "T00:00:00");
+    var idx = d.getDay();
+    var sched = state.schedule[idx];
+    var isToday = state.dayKey === todayKey();
+    var sub = sched ? ((sched.hasClass ? "Class day" : "No class") + " · " + (sched.gym ? "Gym: " + esc(sched.note || "yes") : "No gym scheduled")) : "";
     return (
-      <div style={S.loadingScreen}>
-        <div style={S.loadingPlate} />
-        <div style={S.loadingText}>LOADING LOG…</div>
-      </div>
+      '<div class="header">' +
+        '<div class="header-top">' +
+          '<div class="brand"><span class="brand-mark">&#9670;</span> TRAINING LOG</div>' +
+          '<div class="date-nav">' +
+            '<button class="arrow" data-action="prevday">&#8249;</button>' +
+            '<button class="label" data-action="gotoday" style="opacity:' + (isToday ? 1 : 0.65) + '">' + dateLabel(state.dayKey) + '</button>' +
+            '<button class="arrow" data-action="nextday">&#8250;</button>' +
+          '</div>' +
+        '</div>' +
+        (sub ? '<div class="header-sub">' + sub + '</div>' : '') +
+      '</div>'
     );
   }
 
-  const todayIdx = new Date(dayKey + "T00:00:00").getDay();
-  const todaySchedule = schedule[todayIdx];
+  function statBlock(label, value, sub, accent) {
+    return (
+      '<div class="stat-block">' +
+        '<div class="stat-label">' + esc(label) + '</div>' +
+        '<div class="stat-value' + (accent ? ' accent' : '') + '">' + esc(value) + '</div>' +
+        '<div class="stat-sub">' + esc(sub) + '</div>' +
+      '</div>'
+    );
+  }
 
-  return (
-    <div style={S.app}>
-      <Header dayKey={dayKey} setDayKey={setDayKey} todaySchedule={todaySchedule} />
-      <div style={S.content}>
-        {tab === "today" && (
-          <TodayTab dayLog={dayLog} todaySchedule={todaySchedule} workoutLog={workoutLog} dayKey={dayKey} />
-        )}
-        {tab === "schedule" && <ScheduleTab schedule={schedule} saveSchedule={saveSchedule} />}
-        {tab === "workout" && (
-          <WorkoutTab dayKey={dayKey} exercises={exercises} saveExercises={saveExercises} workoutLog={workoutLog} saveWorkoutLog={saveWorkoutLog} />
-        )}
-        {tab === "hydration" && <HydrationTab dayLog={dayLog} saveDayLog={saveDayLog} />}
-        {tab === "meals" && <MealsTab dayLog={dayLog} saveDayLog={saveDayLog} />}
-        {tab === "chores" && <ChoresTab dayLog={dayLog} saveDayLog={saveDayLog} />}
-      </div>
-      <BottomNav tab={tab} setTab={setTab} />
-    </div>
-  );
-}
+  function todayTabHtml() {
+    var todaysSets = state.workoutLog.filter(function (w) { return w.date === state.dayKey; });
+    var proteinTotal = state.dayLog.meals.reduce(function (s, m) { return s + (Number(m.protein) || 0); }, 0);
+    var waterPct = Math.min(100, Math.round((state.dayLog.waterMl / WATER_GOAL_ML) * 100));
+    var idx = new Date(state.dayKey + "T00:00:00").getDay();
+    var sched = state.schedule[idx];
 
-function Header({ dayKey, setDayKey, todaySchedule }) {
-  const shift = (delta) => {
-    const d = new Date(dayKey + "T00:00:00");
-    d.setDate(d.getDate() + delta);
-    setDayKey(todayKey(d));
-  };
-  const isToday = dayKey === todayKey();
-  return (
-    <div style={S.header}>
-      <div style={S.headerTop}>
-        <div style={S.brand}><span style={S.brandMark}>◆</span> TRAINING LOG</div>
-        <div style={S.dateNav}>
-          <button style={S.dateNavBtn} onClick={() => shift(-1)}>‹</button>
-          <button style={{ ...S.dateNavLabel, opacity: isToday ? 1 : 0.65 }} onClick={() => setDayKey(todayKey())}>
-            {dateLabel(dayKey)}
-          </button>
-          <button style={S.dateNavBtn} onClick={() => shift(1)}>›</button>
-        </div>
-      </div>
-      {todaySchedule && (
-        <div style={S.headerSub}>
-          {todaySchedule.hasClass ? "Class day" : "No class"} · {todaySchedule.gym ? "Gym: " + (todaySchedule.note || "yes") : "No gym scheduled"}
-        </div>
-      )}
-    </div>
-  );
-}
+    var workoutRows = todaysSets.length === 0
+      ? '<div class="empty-state">' + (sched && sched.gym ? "No sets logged yet today. Go to Workout to add one." : "No gym scheduled today.") + '</div>'
+      : '<div class="plain-list">' + todaysSets.map(function (w) {
+          return '<div class="row"><span class="row-name">' + esc(w.exercise) + '</span><span class="mono">' + w.sets + '&times;' + w.reps + ' @ ' + w.weight + 'kg</span></div>';
+        }).join("") + '</div>';
 
-function TodayTab({ dayLog, todaySchedule, workoutLog, dayKey }) {
-  const todaysSets = workoutLog.filter((w) => w.date === dayKey);
-  const proteinTotal = dayLog.meals.reduce((s, m) => s + (Number(m.protein) || 0), 0);
-  const waterPct = Math.min(100, Math.round((dayLog.waterMl / WATER_GOAL_ML) * 100));
-  return (
-    <div style={S.tabPane}>
-      <SectionLabel icon="📅" text="Today" />
-      <div style={S.card}>
-        <div style={S.cardRow}>
-          <StatBlock label="Water" value={`${(dayLog.waterMl / 1000).toFixed(1)}L`} sub={`${waterPct}% of goal`} />
-          <StatBlock label="Creatine" value={dayLog.creatineTaken ? "Taken" : "Not yet"} sub={dayLog.creatineTaken ? "✓ logged" : "—"} accent={dayLog.creatineTaken} />
-          <StatBlock label="Protein" value={`${proteinTotal}g`} sub={`${dayLog.meals.length} meal${dayLog.meals.length === 1 ? "" : "s"}`} />
-        </div>
-      </div>
-      <SectionLabel icon="🏋" text="Workout" />
-      <div style={S.card}>
-        {todaysSets.length === 0 ? (
-          <EmptyState text={todaySchedule?.gym ? "No sets logged yet today. Go to Workout to add one." : "No gym scheduled today."} />
-        ) : (
-          <div style={S.plainList}>
-            {todaysSets.map((w) => (
-              <div key={w.id} style={S.workoutRow}>
-                <span style={S.workoutRowName}>{w.exercise}</span>
-                <span style={S.mono}>{w.sets}×{w.reps} @ {w.weight}kg</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-      <SectionLabel icon="🌙" text="Recovery" />
-      <div style={S.card}>
-        <div style={S.cardRow}>
-          <StatBlock label="Sleep" value={dayLog.sleepHours != null ? `${dayLog.sleepHours}h` : "—"} sub="last night" />
-          <StatBlock label="Chores" value={`${dayLog.chores.filter((c) => c.done).length}/${dayLog.chores.length}`} sub="done today" />
-        </div>
-      </div>
-    </div>
-  );
-}
+    return (
+      '<div class="tab-pane">' +
+        '<div class="section-label">&#128197; Today</div>' +
+        '<div class="card"><div class="card-row">' +
+          statBlock("Water", (state.dayLog.waterMl / 1000).toFixed(1) + "L", waterPct + "% of goal") +
+          statBlock("Creatine", state.dayLog.creatineTaken ? "Taken" : "Not yet", state.dayLog.creatineTaken ? "✓ logged" : "—", state.dayLog.creatineTaken) +
+          statBlock("Protein", proteinTotal + "g", state.dayLog.meals.length + " meal" + (state.dayLog.meals.length === 1 ? "" : "s")) +
+        '</div></div>' +
+        '<div class="section-label">&#127939; Workout</div>' +
+        '<div class="card">' + workoutRows + '</div>' +
+        '<div class="section-label">&#127769; Recovery</div>' +
+        '<div class="card"><div class="card-row">' +
+          statBlock("Sleep", state.dayLog.sleepHours != null ? state.dayLog.sleepHours + "h" : "—", "last night") +
+          statBlock("Chores", state.dayLog.chores.filter(function (c) { return c.done; }).length + "/" + state.dayLog.chores.length, "done today") +
+        '</div></div>' +
+      '</div>'
+    );
+  }
 
-function StatBlock({ label, value, sub, accent }) {
-  return (
-    <div style={S.statBlock}>
-      <div style={S.statLabel}>{label}</div>
-      <div style={{ ...S.statValue, color: accent ? T.accent : T.text }}>{value}</div>
-      <div style={S.statSub}>{sub}</div>
-    </div>
-  );
-}
+  function scheduleTabHtml() {
+    var rows = state.schedule.map(function (s, i) {
+      return (
+        '<div class="schedule-card">' +
+          '<div class="schedule-top">' +
+            '<span class="schedule-day">' + DAY_LABELS[i] + '</span>' +
+            '<label class="toggle-label"><input type="checkbox" data-sched-idx="' + i + '" data-sched-field="hasClass" ' + (s.hasClass ? "checked" : "") + '/> Class</label>' +
+            '<label class="toggle-label"><input type="checkbox" data-sched-idx="' + i + '" data-sched-field="gym" ' + (s.gym ? "checked" : "") + '/> Gym</label>' +
+          '</div>' +
+          '<input class="note-input" data-sched-idx="' + i + '" data-sched-field="note" value="' + esc(s.note) + '" placeholder="Note (e.g. after class, evening)" />' +
+        '</div>'
+      );
+    }).join("");
+    return '<div class="tab-pane"><div class="section-label">&#128197; Weekly Schedule</div><div class="plain-list">' + rows + '</div></div>';
+  }
 
-function ScheduleTab({ schedule, saveSchedule }) {
-  const update = (idx, patch) => {
-    const next = schedule.map((s, i) => (i === idx ? { ...s, ...patch } : s));
-    saveSchedule(next);
-  };
-  return (
-    <div style={S.tabPane}>
-      <SectionLabel icon="📅" text="Weekly Schedule" />
-      <div style={S.plainList}>
-        {schedule.map((s, i) => (
-          <div key={s.day} style={S.scheduleCard}>
-            <div style={S.scheduleTop}>
-              <span style={S.scheduleDay}>{DAY_LABELS[i]}</span>
-              <label style={S.toggleLabel}>
-                <input type="checkbox" checked={s.hasClass} onChange={(e) => update(i, { hasClass: e.target.checked })} style={S.checkbox} />
-                Class
-              </label>
-              <label style={S.toggleLabel}>
-                <input type="checkbox" checked={s.gym} onChange={(e) => update(i, { gym: e.target.checked })} style={S.checkbox} />
-                Gym
-              </label>
-            </div>
-            <input style={S.noteInput} value={s.note} onChange={(e) => update(i, { note: e.target.value })} placeholder="Note (e.g. after class, evening)" />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+  function workoutTabHtml() {
+    var todaysSets = state.workoutLog.filter(function (w) { return w.date === state.dayKey; });
+    var history = state.workoutLog.filter(function (w) { return w.date !== state.dayKey; }).slice(0, 40);
 
-function WorkoutTab({ dayKey, exercises, saveExercises, workoutLog, saveWorkoutLog }) {
-  const [name, setName] = useState("");
-  const [sets, setSets] = useState("3");
-  const [reps, setReps] = useState("10");
-  const [weight, setWeight] = useState("20");
+    var datalist = '<datalist id="ex-suggestions">' + state.exercises.map(function (e) { return '<option value="' + esc(e) + '">'; }).join("") + '</datalist>';
 
-  const addEntry = () => {
-    const exName = name.trim();
-    if (!exName) return;
-    const entry = { id: `${Date.now()}`, date: dayKey, exercise: exName, sets: Number(sets) || 0, reps: Number(reps) || 0, weight: Number(weight) || 0 };
-    saveWorkoutLog([entry, ...workoutLog]);
-    if (!exercises.includes(exName)) saveExercises([exName, ...exercises].slice(0, 30));
-    setName("");
-  };
-  const removeEntry = (id) => saveWorkoutLog(workoutLog.filter((w) => w.id !== id));
-  const todaysSets = workoutLog.filter((w) => w.date === dayKey);
-  const history = workoutLog.filter((w) => w.date !== dayKey).slice(0, 40);
+    var todayRows = todaysSets.length === 0
+      ? '<div class="empty-state">Nothing logged yet — add your first set above.</div>'
+      : '<div class="plain-list">' + todaysSets.map(function (w) {
+          return '<div class="row"><span class="row-name">' + esc(w.exercise) + '</span><span class="mono">' + w.sets + '&times;' + w.reps + ' @ ' + w.weight + 'kg</span><button class="icon-btn" data-action="delworkout" data-id="' + w.id + '">&#10005;</button></div>';
+        }).join("") + '</div>';
 
-  return (
-    <div style={S.tabPane}>
-      <SectionLabel icon="🏋" text="Log a Set" />
-      <div style={S.card}>
-        <div style={S.fieldGroup}>
-          <span style={S.fieldLabel}>Exercise</span>
-          <input style={S.textInput} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Dumbbell Bench Press" list="exercise-suggestions" />
-          <datalist id="exercise-suggestions">
-            {exercises.map((ex) => <option key={ex} value={ex} />)}
-          </datalist>
-        </div>
-        <div style={S.cardRow}>
-          <NumField label="Sets" value={sets} setValue={setSets} />
-          <NumField label="Reps" value={reps} setValue={setReps} />
-          <NumField label="Weight (kg)" value={weight} setValue={setWeight} step="0.5" />
-        </div>
-        <button style={S.primaryBtn} onClick={addEntry}>+ Add Set</button>
-      </div>
-      <SectionLabel icon="🔥" text={`Today · ${todaysSets.length} set${todaysSets.length === 1 ? "" : "s"}`} />
-      <div style={S.card}>
-        {todaysSets.length === 0 ? (
-          <EmptyState text="Nothing logged yet — add your first set above." />
-        ) : (
-          <div style={S.plainList}>
-            {todaysSets.map((w) => (
-              <div key={w.id} style={S.workoutRow}>
-                <span style={S.workoutRowName}>{w.exercise}</span>
-                <span style={S.mono}>{w.sets}×{w.reps} @ {w.weight}kg</span>
-                <button style={S.iconBtn} onClick={() => removeEntry(w.id)}>✕</button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-      {history.length > 0 && (
-        <>
-          <SectionLabel icon="📅" text="History" />
-          <div style={S.card}>
-            <div style={S.plainList}>
-              {history.map((w) => (
-                <div key={w.id} style={S.workoutRow}>
-                  <span style={S.workoutRowDate}>{w.date.slice(5)}</span>
-                  <span style={S.workoutRowName}>{w.exercise}</span>
-                  <span style={S.mono}>{w.sets}×{w.reps} @ {w.weight}kg</span>
-                  <button style={S.iconBtn} onClick={() => removeEntry(w.id)}>✕</button>
-                </div>
-              ))}
-            </div>
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
+    var historyRows = history.length === 0 ? "" : (
+      '<div class="section-label">&#128197; History</div><div class="card"><div class="plain-list">' +
+      history.map(function (w) {
+        return '<div class="row"><span class="row-date">' + w.date.slice(5) + '</span><span class="row-name">' + esc(w.exercise) + '</span><span class="mono">' + w.sets + '&times;' + w.reps + ' @ ' + w.weight + 'kg</span><button class="icon-btn" data-action="delworkout" data-id="' + w.id + '">&#10005;</button></div>';
+      }).join("") + '</div></div>'
+    );
 
-function NumField({ label, value, setValue, step }) {
-  return (
-    <div style={S.numField}>
-      <span style={S.fieldLabel}>{label}</span>
-      <input style={S.numInput} type="number" step={step || "1"} min="0" value={value} onChange={(e) => setValue(e.target.value)} />
-    </div>
-  );
-}
+    return (
+      '<div class="tab-pane">' +
+        '<div class="section-label">&#127939; Log a Set</div>' +
+        '<div class="card">' +
+          '<div class="field-group"><span class="field-label">Exercise</span>' +
+            '<input class="text-input" id="ex-name" list="ex-suggestions" placeholder="e.g. Dumbbell Bench Press" />' + datalist +
+          '</div>' +
+          '<div class="card-row">' +
+            '<div class="num-field"><span class="field-label">Sets</span><input class="num-input" id="ex-sets" type="number" min="0" value="3" /></div>' +
+            '<div class="num-field"><span class="field-label">Reps</span><input class="num-input" id="ex-reps" type="number" min="0" value="10" /></div>' +
+            '<div class="num-field"><span class="field-label">Weight (kg)</span><input class="num-input" id="ex-weight" type="number" min="0" step="0.5" value="20" /></div>' +
+          '</div>' +
+          '<button class="primary-btn" data-action="addworkout">+ Add Set</button>' +
+        '</div>' +
+        '<div class="section-label">&#128293; Today · ' + todaysSets.length + ' set' + (todaysSets.length === 1 ? "" : "s") + '</div>' +
+        '<div class="card">' + todayRows + '</div>' +
+        historyRows +
+      '</div>'
+    );
+  }
 
-function HydrationTab({ dayLog, saveDayLog }) {
-  const pct = Math.min(1, dayLog.waterMl / WATER_GOAL_ML);
-  const addWater = (ml) => saveDayLog({ ...dayLog, waterMl: Math.max(0, dayLog.waterMl + ml) });
-  const toggleCreatine = () => saveDayLog({ ...dayLog, creatineTaken: !dayLog.creatineTaken });
-  const r = 54; const c = 2 * Math.PI * r;
-  return (
-    <div style={S.tabPane}>
-      <SectionLabel icon="💧" text="Hydration" />
-      <div style={{ ...S.card, alignItems: "center" }}>
-        <div style={S.plateWrap}>
-          <svg width="140" height="140" viewBox="0 0 140 140">
-            <circle cx="70" cy="70" r={r} fill="none" stroke={T.line} strokeWidth="10" />
-            <circle cx="70" cy="70" r={r} fill="none" stroke={T.water} strokeWidth="10"
-              strokeDasharray={c} strokeDashoffset={c - c * pct} strokeLinecap="round"
-              transform="rotate(-90 70 70)" style={{ transition: "stroke-dashoffset 0.4s ease" }} />
-          </svg>
-          <div style={S.plateCenter}>
-            <div style={S.plateValue}>{(dayLog.waterMl / 1000).toFixed(1)}L</div>
-            <div style={S.plateGoal}>of {(WATER_GOAL_ML / 1000).toFixed(1)}L</div>
-          </div>
-        </div>
-        <div style={S.quickAddRow}>
-          {[250, 500, 1000].map((ml) => (
-            <button key={ml} style={S.quickAddBtn} onClick={() => addWater(ml)}>+{ml}ml</button>
-          ))}
-          <button style={S.quickAddBtnGhost} onClick={() => addWater(-250)}>−250ml</button>
-        </div>
-      </div>
-      <SectionLabel icon="🔥" text="Creatine" />
-      <div style={S.card}>
-        <button style={{ ...S.creatineBtn, ...(dayLog.creatineTaken ? S.creatineBtnActive : {}) }} onClick={toggleCreatine}>
-          <span style={S.creatineCheck}>{dayLog.creatineTaken ? "✓" : ""}</span>
-          {dayLog.creatineTaken ? "Creatine taken today" : "Mark creatine as taken"}
-        </button>
-        <div style={S.hint}>3–5g, once daily — pair with breakfast for consistency.</div>
-      </div>
-    </div>
-  );
-}
+  function hydrationTabHtml() {
+    var pct = Math.min(1, state.dayLog.waterMl / WATER_GOAL_ML);
+    var r = 54, c = 2 * Math.PI * r;
+    var offset = c - c * pct;
+    return (
+      '<div class="tab-pane">' +
+        '<div class="section-label">&#128167; Hydration</div>' +
+        '<div class="card" style="align-items:center">' +
+          '<div class="plate-wrap">' +
+            '<svg width="140" height="140" viewBox="0 0 140 140">' +
+              '<circle cx="70" cy="70" r="' + r + '" fill="none" stroke="var(--line)" stroke-width="10" />' +
+              '<circle cx="70" cy="70" r="' + r + '" fill="none" stroke="var(--water)" stroke-width="10" stroke-dasharray="' + c + '" stroke-dashoffset="' + offset + '" stroke-linecap="round" transform="rotate(-90 70 70)" />' +
+            '</svg>' +
+            '<div class="plate-center"><div class="plate-value">' + (state.dayLog.waterMl / 1000).toFixed(1) + 'L</div><div class="plate-goal">of ' + (WATER_GOAL_ML / 1000).toFixed(1) + 'L</div></div>' +
+          '</div>' +
+          '<div class="quick-add-row">' +
+            '<button class="quick-add-btn" data-action="addwater" data-ml="250">+250ml</button>' +
+            '<button class="quick-add-btn" data-action="addwater" data-ml="500">+500ml</button>' +
+            '<button class="quick-add-btn" data-action="addwater" data-ml="1000">+1000ml</button>' +
+            '<button class="quick-add-ghost" data-action="addwater" data-ml="-250">&minus;250ml</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="section-label">&#128293; Creatine</div>' +
+        '<div class="card">' +
+          '<button class="creatine-btn' + (state.dayLog.creatineTaken ? ' active' : '') + '" data-action="togglecreatine">' +
+            '<span class="creatine-check">' + (state.dayLog.creatineTaken ? "&#10003;" : "") + '</span>' +
+            (state.dayLog.creatineTaken ? "Creatine taken today" : "Mark creatine as taken") +
+          '</button>' +
+          '<div class="hint">3–5g, once daily — pair with breakfast for consistency.</div>' +
+        '</div>' +
+      '</div>'
+    );
+  }
 
-function MealsTab({ dayLog, saveDayLog }) {
-  const [name, setName] = useState("");
-  const [protein, setProtein] = useState("");
-  const addMeal = () => {
-    const n = name.trim();
-    if (!n) return;
-    const meal = { id: `${Date.now()}`, name: n, protein: Number(protein) || 0 };
-    saveDayLog({ ...dayLog, meals: [meal, ...dayLog.meals] });
-    setName(""); setProtein("");
-  };
-  const removeMeal = (id) => saveDayLog({ ...dayLog, meals: dayLog.meals.filter((m) => m.id !== id) });
-  const total = dayLog.meals.reduce((s, m) => s + (Number(m.protein) || 0), 0);
-  return (
-    <div style={S.tabPane}>
-      <SectionLabel icon="🍽" text="Log a Meal" />
-      <div style={S.card}>
-        <div style={S.fieldGroup}>
-          <span style={S.fieldLabel}>Meal</span>
-          <input style={S.textInput} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Rice + 4 eggs" />
-        </div>
-        <div style={S.fieldGroup}>
-          <span style={S.fieldLabel}>Protein (g, estimate)</span>
-          <input style={S.textInput} type="number" min="0" value={protein} onChange={(e) => setProtein(e.target.value)} placeholder="e.g. 24" />
-        </div>
-        <button style={S.primaryBtn} onClick={addMeal}>+ Add Meal</button>
-      </div>
-      <SectionLabel icon="🔥" text={`Today's protein · ${total}g`} />
-      <div style={S.card}>
-        {dayLog.meals.length === 0 ? (
-          <EmptyState text="No meals logged yet today." />
-        ) : (
-          <div style={S.plainList}>
-            {dayLog.meals.map((m) => (
-              <div key={m.id} style={S.workoutRow}>
-                <span style={S.workoutRowName}>{m.name}</span>
-                <span style={S.mono}>{m.protein}g</span>
-                <button style={S.iconBtn} onClick={() => removeMeal(m.id)}>✕</button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
+  function mealsTabHtml() {
+    var total = state.dayLog.meals.reduce(function (s, m) { return s + (Number(m.protein) || 0); }, 0);
+    var rows = state.dayLog.meals.length === 0
+      ? '<div class="empty-state">No meals logged yet today.</div>'
+      : '<div class="plain-list">' + state.dayLog.meals.map(function (m) {
+          return '<div class="row"><span class="row-name">' + esc(m.name) + '</span><span class="mono">' + m.protein + 'g</span><button class="icon-btn" data-action="delmeal" data-id="' + m.id + '">&#10005;</button></div>';
+        }).join("") + '</div>';
+    return (
+      '<div class="tab-pane">' +
+        '<div class="section-label">&#127869; Log a Meal</div>' +
+        '<div class="card">' +
+          '<div class="field-group"><span class="field-label">Meal</span><input class="text-input" id="meal-name" placeholder="e.g. Rice + 4 eggs" /></div>' +
+          '<div class="field-group"><span class="field-label">Protein (g, estimate)</span><input class="text-input" id="meal-protein" type="number" min="0" placeholder="e.g. 24" /></div>' +
+          '<button class="primary-btn" data-action="addmeal">+ Add Meal</button>' +
+        '</div>' +
+        '<div class="section-label">&#128293; Today\'s protein · ' + total + 'g</div>' +
+        '<div class="card">' + rows + '</div>' +
+      '</div>'
+    );
+  }
 
-function ChoresTab({ dayLog, saveDayLog }) {
-  const [newChore, setNewChore] = useState("");
-  const seedDefaults = () => {
-    saveDayLog({ ...dayLog, chores: DEFAULT_CHORES.map((c, i) => ({ id: `seed-${i}`, text: c, done: false })) });
-  };
-  const toggleChore = (id) => saveDayLog({ ...dayLog, chores: dayLog.chores.map((c) => (c.id === id ? { ...c, done: !c.done } : c)) });
-  const addChore = () => {
-    const t = newChore.trim();
-    if (!t) return;
-    saveDayLog({ ...dayLog, chores: [...dayLog.chores, { id: `${Date.now()}`, text: t, done: false }] });
-    setNewChore("");
-  };
-  const removeChore = (id) => saveDayLog({ ...dayLog, chores: dayLog.chores.filter((c) => c.id !== id) });
-  const setSleep = (h) => saveDayLog({ ...dayLog, sleepHours: h });
-
-  return (
-    <div style={S.tabPane}>
-      <SectionLabel icon="✅" text="Chores" />
-      <div style={S.card}>
-        {dayLog.chores.length === 0 && (
-          <>
-            <EmptyState text="No chores added for today." />
-            <button style={S.ghostBtn} onClick={seedDefaults}>Load usual chores (dog, plants, rice, errand)</button>
-          </>
-        )}
-        {dayLog.chores.length > 0 && (
-          <div style={S.plainList}>
-            {dayLog.chores.map((c) => (
-              <div key={c.id} style={S.choreRow}>
-                <button style={S.choreCheckBtn} onClick={() => toggleChore(c.id)}>
-                  <span style={{ ...S.choreCheckbox, ...(c.done ? S.choreCheckboxDone : {}) }}>{c.done ? "✓" : ""}</span>
-                  <span style={{ ...S.choreText, ...(c.done ? S.choreTextDone : {}) }}>{c.text}</span>
-                </button>
-                <button style={S.iconBtn} onClick={() => removeChore(c.id)}>✕</button>
-              </div>
-            ))}
-          </div>
-        )}
-        <div style={S.addChoreRow}>
-          <input style={S.textInput} value={newChore} onChange={(e) => setNewChore(e.target.value)} placeholder="Add a task…" onKeyDown={(e) => e.key === "Enter" && addChore()} />
-          <button style={S.iconAddBtn} onClick={addChore}>+</button>
-        </div>
-      </div>
-      <SectionLabel icon="🌙" text="Sleep last night" />
-      <div style={S.card}>
-        <div style={S.sleepRow}>
-          {[5, 6, 7, 8, 9, 10].map((h) => (
-            <button key={h} style={{ ...S.sleepChip, ...(dayLog.sleepHours === h ? S.sleepChipActive : {}) }} onClick={() => setSleep(h)}>{h}h</button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function SectionLabel({ icon, text }) {
-  return <div style={S.sectionLabel}><span>{icon}</span><span>{text}</span></div>;
-}
-function EmptyState({ text }) {
-  return <div style={S.emptyState}>{text}</div>;
-}
-
-function BottomNav({ tab, setTab }) {
-  const items = [
-    { id: "today", label: "Today", icon: "📅" },
-    { id: "workout", label: "Workout", icon: "🏋" },
-    { id: "hydration", label: "Hydrate", icon: "💧" },
-    { id: "meals", label: "Meals", icon: "🍽" },
-    { id: "chores", label: "Chores", icon: "✅" },
-    { id: "schedule", label: "Week", icon: "🗓" },
-  ];
-  return (
-    <div style={S.bottomNav}>
-      {items.map((it) => {
-        const active = tab === it.id;
+  function choresTabHtml() {
+    var choresHtml;
+    if (state.dayLog.chores.length === 0) {
+      choresHtml = '<div class="empty-state">No chores added for today.</div><button class="ghost-btn" data-action="seedchores">Load usual chores (dog, plants, rice, errand)</button>';
+    } else {
+      choresHtml = '<div class="plain-list">' + state.dayLog.chores.map(function (c) {
         return (
-          <button key={it.id} style={{ ...S.navBtn, color: active ? T.accent : T.textMuted }} onClick={() => setTab(it.id)}>
-            <span style={{ fontSize: 18 }}>{it.icon}</span>
-            <span style={{ ...S.navLabel, opacity: active ? 1 : 0.75 }}>{it.label}</span>
-          </button>
+          '<div class="chore-row">' +
+            '<button class="chore-check-btn" data-action="togglechore" data-id="' + c.id + '">' +
+              '<span class="chore-checkbox' + (c.done ? ' done' : '') + '">' + (c.done ? "&#10003;" : "") + '</span>' +
+              '<span class="chore-text' + (c.done ? ' done' : '') + '">' + esc(c.text) + '</span>' +
+            '</button>' +
+            '<button class="icon-btn" data-action="delchore" data-id="' + c.id + '">&#10005;</button>' +
+          '</div>'
         );
-      })}
-    </div>
-  );
-}
+      }).join("") + '</div>';
+    }
+    var sleepChips = [5, 6, 7, 8, 9, 10].map(function (h) {
+      return '<button class="sleep-chip' + (state.dayLog.sleepHours === h ? ' active' : '') + '" data-action="setsleep" data-h="' + h + '">' + h + 'h</button>';
+    }).join("");
+    return (
+      '<div class="tab-pane">' +
+        '<div class="section-label">&#9989; Chores</div>' +
+        '<div class="card">' + choresHtml +
+          '<div class="add-chore-row"><input class="text-input" id="new-chore" placeholder="Add a task…" /><button class="icon-add-btn" data-action="addchore">+</button></div>' +
+        '</div>' +
+        '<div class="section-label">&#127769; Sleep last night</div>' +
+        '<div class="card"><div class="sleep-row">' + sleepChips + '</div></div>' +
+      '</div>'
+    );
+  }
 
-const T = {
-  bg: "#12151a", surface: "#1b2028", surfaceRaised: "#232a33", line: "#2c3440",
-  text: "#ecebe4", textMuted: "#8b95a3", accent: "#ff5330", accent2: "#f2b93c",
-  water: "#4fb8c9", good: "#5fbf82",
-};
+  function bottomNavHtml() {
+    var items = [
+      { id: "today", label: "Today", icon: "&#128197;" },
+      { id: "workout", label: "Workout", icon: "&#127939;" },
+      { id: "hydration", label: "Hydrate", icon: "&#128167;" },
+      { id: "meals", label: "Meals", icon: "&#127869;" },
+      { id: "chores", label: "Chores", icon: "&#9989;" },
+      { id: "schedule", label: "Week", icon: "&#128197;&#65039;" },
+    ];
+    return '<div class="bottom-nav">' + items.map(function (it) {
+      return '<button class="nav-btn' + (state.tab === it.id ? ' active' : '') + '" data-action="settab" data-tab="' + it.id + '"><span class="nav-icon">' + it.icon + '</span><span class="nav-label">' + it.label + '</span></button>';
+    }).join("") + '</div>';
+  }
 
-const S = {
-  app: { fontFamily: "'Inter', sans-serif", background: T.bg, color: T.text, minHeight: "100vh", maxWidth: 480, margin: "0 auto", display: "flex", flexDirection: "column", position: "relative" },
-  loadingScreen: { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100vh", background: T.bg, color: T.textMuted, fontFamily: "'Inter', sans-serif", gap: 12 },
-  loadingPlate: { width: 36, height: 36, borderRadius: "50%", border: `4px solid ${T.line}`, borderTopColor: T.accent, animation: "spin 0.9s linear infinite" },
-  loadingText: { fontSize: 12, letterSpacing: "0.12em" },
-  header: { padding: "18px 18px 12px", borderBottom: `1px solid ${T.line}`, position: "sticky", top: 0, background: T.bg, zIndex: 5 },
-  headerTop: { display: "flex", alignItems: "center", justifyContent: "space-between" },
-  brand: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 19, letterSpacing: "0.08em", color: T.text, display: "flex", alignItems: "center", gap: 6 },
-  brandMark: { color: T.accent, fontSize: 12 },
-  dateNav: { display: "flex", alignItems: "center", gap: 4 },
-  dateNavBtn: { background: "none", border: "none", color: T.textMuted, fontSize: 20, width: 26, height: 26, cursor: "pointer", lineHeight: 1 },
-  dateNavLabel: { background: "none", border: "none", color: T.text, fontSize: 11, letterSpacing: "0.06em", fontFamily: "'IBM Plex Mono', monospace", cursor: "pointer", padding: "4px 2px" },
-  headerSub: { marginTop: 6, fontSize: 12, color: T.textMuted },
-  content: { flex: 1, padding: "16px 16px 90px", overflowY: "auto" },
-  tabPane: { display: "flex", flexDirection: "column", gap: 8 },
-  sectionLabel: { display: "flex", alignItems: "center", gap: 6, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: T.textMuted, marginTop: 14, marginBottom: 2 },
-  card: { background: T.surface, border: `1px solid ${T.line}`, borderRadius: 14, padding: 16, display: "flex", flexDirection: "column", gap: 12 },
-  cardRow: { display: "flex", gap: 10 },
-  statBlock: { flex: 1, display: "flex", flexDirection: "column", gap: 2 },
-  statLabel: { fontSize: 10, letterSpacing: "0.08em", color: T.textMuted, textTransform: "uppercase" },
-  statValue: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, letterSpacing: "0.02em" },
-  statSub: { fontSize: 11, color: T.textMuted },
-  plainList: { display: "flex", flexDirection: "column", gap: 8 },
-  workoutRow: { display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", background: T.surfaceRaised, borderRadius: 10 },
-  workoutRowName: { flex: 1, fontSize: 13.5, fontWeight: 500 },
-  workoutRowDate: { fontSize: 10, color: T.textMuted, fontFamily: "'IBM Plex Mono', monospace", width: 32 },
-  mono: { fontFamily: "'IBM Plex Mono', monospace", fontSize: 12.5, color: T.accent2 },
-  iconBtn: { background: "none", border: "none", color: T.textMuted, cursor: "pointer", padding: 4, display: "flex" },
-  iconAddBtn: { background: T.accent, border: "none", color: "#1a0d08", cursor: "pointer", borderRadius: 10, width: 40, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 },
-  emptyState: { fontSize: 13, color: T.textMuted, padding: "10px 2px" },
-  fieldGroup: { display: "flex", flexDirection: "column", gap: 5 },
-  fieldLabel: { fontSize: 10.5, letterSpacing: "0.06em", color: T.textMuted, textTransform: "uppercase" },
-  textInput: { background: T.surfaceRaised, border: `1px solid ${T.line}`, borderRadius: 9, padding: "10px 12px", color: T.text, fontSize: 14, fontFamily: "'Inter', sans-serif", outline: "none", width: "100%", boxSizing: "border-box" },
-  numField: { flex: 1, display: "flex", flexDirection: "column", gap: 5 },
-  numInput: { background: T.surfaceRaised, border: `1px solid ${T.line}`, borderRadius: 9, padding: "10px 8px", color: T.text, fontSize: 14, fontFamily: "'IBM Plex Mono', monospace", outline: "none", width: "100%", boxSizing: "border-box", textAlign: "center" },
-  primaryBtn: { background: T.accent, border: "none", borderRadius: 10, color: "#1a0d08", fontWeight: 700, fontSize: 14, padding: "11px 14px", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, cursor: "pointer" },
-  ghostBtn: { background: "none", border: `1px dashed ${T.line}`, borderRadius: 10, color: T.textMuted, fontSize: 12.5, padding: "10px 12px", cursor: "pointer", marginTop: 6 },
-  scheduleCard: { background: T.surface, border: `1px solid ${T.line}`, borderRadius: 12, padding: 12, display: "flex", flexDirection: "column", gap: 8 },
-  scheduleTop: { display: "flex", alignItems: "center", gap: 14 },
-  scheduleDay: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 15, letterSpacing: "0.04em", flex: 1 },
-  toggleLabel: { display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: T.textMuted },
-  checkbox: { width: 15, height: 15, accentColor: T.accent },
-  noteInput: { background: T.surfaceRaised, border: `1px solid ${T.line}`, borderRadius: 8, padding: "7px 10px", color: T.text, fontSize: 12.5, outline: "none", width: "100%", boxSizing: "border-box" },
-  plateWrap: { position: "relative", width: 140, height: 140, alignSelf: "center" },
-  plateCenter: { position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" },
-  plateValue: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 30 },
-  plateGoal: { fontSize: 11, color: T.textMuted, marginTop: 2 },
-  quickAddRow: { display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" },
-  quickAddBtn: { background: T.water, border: "none", borderRadius: 9, color: "#062229", fontWeight: 700, fontSize: 12.5, padding: "9px 12px", cursor: "pointer" },
-  quickAddBtnGhost: { background: "none", border: `1px solid ${T.line}`, borderRadius: 9, color: T.textMuted, fontSize: 12.5, padding: "9px 12px", cursor: "pointer" },
-  creatineBtn: { display: "flex", alignItems: "center", gap: 10, background: T.surfaceRaised, border: `1px solid ${T.line}`, borderRadius: 12, padding: "13px 14px", color: T.text, fontSize: 14, fontWeight: 500, cursor: "pointer", width: "100%" },
-  creatineBtnActive: { background: "rgba(95,191,130,0.12)", border: `1px solid ${T.good}`, color: T.good },
-  creatineCheck: { width: 20, height: 20, borderRadius: 6, border: `1.5px solid currentColor`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
-  hint: { fontSize: 11.5, color: T.textMuted, marginTop: 8 },
-  choreRow: { display: "flex", alignItems: "center", gap: 8 },
-  choreCheckBtn: { flex: 1, display: "flex", alignItems: "center", gap: 10, background: T.surfaceRaised, border: `1px solid ${T.line}`, borderRadius: 10, padding: "10px 12px", cursor: "pointer", textAlign: "left" },
-  choreCheckbox: { width: 18, height: 18, borderRadius: 5, border: `1.5px solid ${T.textMuted}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: T.text },
-  choreCheckboxDone: { background: T.good, borderColor: T.good, color: "#0a1a10" },
-  choreText: { fontSize: 13.5, color: T.text },
-  choreTextDone: { color: T.textMuted, textDecoration: "line-through" },
-  addChoreRow: { display: "flex", gap: 8, marginTop: 4 },
-  sleepRow: { display: "flex", gap: 8, flexWrap: "wrap" },
-  sleepChip: { background: T.surfaceRaised, border: `1px solid ${T.line}`, borderRadius: 9, color: T.text, fontSize: 13, fontFamily: "'IBM Plex Mono', monospace", padding: "9px 14px", cursor: "pointer" },
-  sleepChipActive: { background: T.accent2, borderColor: T.accent2, color: "#241a04", fontWeight: 700 },
-  bottomNav: { position: "sticky", bottom: 0, display: "flex", justifyContent: "space-around", padding: "8px 4px 10px", background: T.bg, borderTop: `1px solid ${T.line}` },
-  navBtn: { background: "none", border: "none", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, cursor: "pointer", padding: "4px 6px" },
-  navLabel: { fontSize: 10 },
-};
+  function render() {
+    var body;
+    if (state.tab === "today") body = todayTabHtml();
+    else if (state.tab === "schedule") body = scheduleTabHtml();
+    else if (state.tab === "workout") body = workoutTabHtml();
+    else if (state.tab === "hydration") body = hydrationTabHtml();
+    else if (state.tab === "meals") body = mealsTabHtml();
+    else if (state.tab === "chores") body = choresTabHtml();
 
-const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(<TrainingLog />);
+    document.getElementById("app").innerHTML =
+      headerHtml() +
+      '<div class="content">' + body + '</div>' +
+      bottomNavHtml();
+
+    attachHandlers();
+  }
+
+  function attachHandlers() {
+    var app = document.getElementById("app");
+
+    app.querySelectorAll("[data-action]").forEach(function (el) {
+      var action = el.getAttribute("data-action");
+      if (el.tagName === "INPUT") return; // handled separately
+      el.addEventListener("click", function () {
+        handleAction(action, el);
+      });
+    });
+
+    // schedule inputs
+    app.querySelectorAll("[data-sched-idx]").forEach(function (el) {
+      var evt = el.type === "checkbox" ? "change" : "change";
+      el.addEventListener(evt, function () {
+        var idx = Number(el.getAttribute("data-sched-idx"));
+        var field = el.getAttribute("data-sched-field");
+        var next = state.schedule.map(function (s, i) {
+          if (i !== idx) return s;
+          var copy = Object.assign({}, s);
+          copy[field] = el.type === "checkbox" ? el.checked : el.value;
+          return copy;
+        });
+        saveSchedule(next);
+      });
+    });
+
+    // new chore enter key
+    var newChoreInput = document.getElementById("new-chore");
+    if (newChoreInput) {
+      newChoreInput.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") handleAction("addchore");
+      });
+    }
+  }
+
+  function handleAction(action, el) {
+    if (action === "prevday") {
+      var d = new Date(state.dayKey + "T00:00:00"); d.setDate(d.getDate() - 1); goToDay(todayKey(d));
+    } else if (action === "nextday") {
+      var d2 = new Date(state.dayKey + "T00:00:00"); d2.setDate(d2.getDate() + 1); goToDay(todayKey(d2));
+    } else if (action === "gotoday") {
+      goToDay(todayKey());
+    } else if (action === "settab") {
+      setTab(el.getAttribute("data-tab"));
+    } else if (action === "addwater") {
+      var ml = Number(el.getAttribute("data-ml"));
+      saveDayLog(Object.assign({}, state.dayLog, { waterMl: Math.max(0, state.dayLog.waterMl + ml) }));
+    } else if (action === "togglecreatine") {
+      saveDayLog(Object.assign({}, state.dayLog, { creatineTaken: !state.dayLog.creatineTaken }));
+    } else if (action === "addworkout") {
+      var name = document.getElementById("ex-name").value.trim();
+      if (!name) return;
+      var sets = Number(document.getElementById("ex-sets").value) || 0;
+      var reps = Number(document.getElementById("ex-reps").value) || 0;
+      var weight = Number(document.getElementById("ex-weight").value) || 0;
+      var entry = { id: String(Date.now()), date: state.dayKey, exercise: name, sets: sets, reps: reps, weight: weight };
+      saveWorkoutLog([entry].concat(state.workoutLog));
+      if (state.exercises.indexOf(name) === -1) saveExercises([name].concat(state.exercises).slice(0, 30));
+    } else if (action === "delworkout") {
+      var id = el.getAttribute("data-id");
+      saveWorkoutLog(state.workoutLog.filter(function (w) { return w.id !== id; }));
+    } else if (action === "addmeal") {
+      var mname = document.getElementById("meal-name").value.trim();
+      if (!mname) return;
+      var protein = Number(document.getElementById("meal-protein").value) || 0;
+      var meal = { id: String(Date.now()), name: mname, protein: protein };
+      saveDayLog(Object.assign({}, state.dayLog, { meals: [meal].concat(state.dayLog.meals) }));
+    } else if (action === "delmeal") {
+      var mid = el.getAttribute("data-id");
+      saveDayLog(Object.assign({}, state.dayLog, { meals: state.dayLog.meals.filter(function (m) { return m.id !== mid; }) }));
+    } else if (action === "seedchores") {
+      var chores = DEFAULT_CHORES.map(function (c, i) { return { id: "seed-" + i, text: c, done: false }; });
+      saveDayLog(Object.assign({}, state.dayLog, { chores: chores }));
+    } else if (action === "togglechore") {
+      var cid = el.getAttribute("data-id");
+      var chores2 = state.dayLog.chores.map(function (c) { return c.id === cid ? Object.assign({}, c, { done: !c.done }) : c; });
+      saveDayLog(Object.assign({}, state.dayLog, { chores: chores2 }));
+    } else if (action === "delchore") {
+      var did = el.getAttribute("data-id");
+      saveDayLog(Object.assign({}, state.dayLog, { chores: state.dayLog.chores.filter(function (c) { return c.id !== did; }) }));
+    } else if (action === "addchore") {
+      var input = document.getElementById("new-chore");
+      var t = input.value.trim();
+      if (!t) return;
+      var newChore = { id: String(Date.now()), text: t, done: false };
+      saveDayLog(Object.assign({}, state.dayLog, { chores: state.dayLog.chores.concat([newChore]) }));
+    } else if (action === "setsleep") {
+      var h = Number(el.getAttribute("data-h"));
+      saveDayLog(Object.assign({}, state.dayLog, { sleepHours: h }));
+    }
+  }
+
+  render();
+
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("service-worker.js").catch(function (e) { console.warn("SW register failed", e); });
+    });
+  }
+})();
 </script>
-
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap');
-input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-input[type=number] { -moz-appearance: textfield; }
-@keyframes spin { to { transform: rotate(360deg); } }
-</style>
 </body>
 </html>
