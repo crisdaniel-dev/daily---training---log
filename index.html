@@ -602,6 +602,23 @@ input, textarea, button { font-family: inherit; }
   }
   setInterval(tickClock, 1000);
 
+  var lastKnownToday = todayKey();
+  function checkDayRollover() {
+    var nowToday = todayKey();
+    if (nowToday !== lastKnownToday) {
+      var wasViewingToday = state.dayKey === lastKnownToday;
+      lastKnownToday = nowToday;
+      if (wasViewingToday) {
+        goToDay(nowToday);
+      }
+    }
+  }
+  setInterval(checkDayRollover, 30000);
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible") checkDayRollover();
+  });
+  window.addEventListener("focus", checkDayRollover);
+
   function statBlock(label, value, sub, accent) {
     return (
       '<div class="stat-block">' +
