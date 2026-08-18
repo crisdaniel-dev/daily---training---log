@@ -1,6 +1,6 @@
 {
-  "name": "Training Log",
-  "short_name": "Training Log",
+  "name": "Crisdaniel's Training Log",
+  "short_name": "Crisdaniel Log",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#12151a",

@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
-<title>Training Log</title>
+<title>Crisdaniel's Training Log</title>
 <meta name="theme-color" content="#12151a" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title" content="Training Log" />
+<meta name="apple-mobile-web-app-title" content="Crisdaniel's Log" />
 <link rel="manifest" href="manifest.json" />
 <link rel="apple-touch-icon" href="icon-192.png" />
 <link rel="icon" href="icon-192.png" />
@@ -45,8 +45,19 @@ input[type=number] { -moz-appearance: textfield; }
 
 .header { padding: 18px 18px 12px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--bg); z-index: 5; }
 .header-top { display: flex; align-items: center; justify-content: space-between; }
-.brand { font-size: 19px; font-weight: 800; letter-spacing: 0.06em; display: flex; align-items: center; gap: 6px; }
-.brand-mark { color: var(--accent); font-size: 12px; }
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand-mark {
+  width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Georgia', serif; font-size: 16px; font-weight: 700; font-style: italic;
+  color: var(--accent);
+  background: linear-gradient(155deg, rgba(255,83,48,0.16), rgba(255,83,48,0.03));
+  border: 1px solid rgba(255,83,48,0.4);
+  box-shadow: 0 0 14px -3px rgba(255,83,48,0.55), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+.brand-text { display: flex; flex-direction: column; gap: 1px; line-height: 1.15; }
+.brand-name { font-size: 15.5px; font-weight: 800; letter-spacing: 0.05em; color: var(--text); }
+.brand-tagline { font-size: 9.5px; font-weight: 700; letter-spacing: 0.16em; color: var(--accent2); text-transform: uppercase; }
 .date-nav { display: flex; align-items: center; gap: 0; background: linear-gradient(180deg, rgba(255,83,48,0.08), rgba(255,83,48,0.02)); border: 1px solid rgba(255,83,48,0.35); border-radius: 10px; padding: 4px; position: relative; overflow: hidden; }
 .date-nav::before { content: ""; position: absolute; top: 0; left: -40%; width: 30%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,83,48,0.15), transparent); animation: scan 3.5s ease-in-out infinite; }
 @keyframes scan { 0% { left: -40%; } 100% { left: 110%; } }
@@ -99,6 +110,16 @@ input[type=number] { -moz-appearance: textfield; }
 .primary-btn:active { transform: scale(0.97); }
 .log-btn { background: linear-gradient(135deg, var(--accent), #ff7a4d); border: none; border-radius: 9px; color: #1a0d08; font-weight: 800; font-size: 13px; padding: 9px 14px; cursor: pointer; white-space: nowrap; box-shadow: 0 3px 12px -3px rgba(255,83,48,0.5); transition: transform 0.1s; }
 .log-btn:active { transform: scale(0.94); }
+
+.rest-timer { display: none; align-items: center; gap: 10px; background: rgba(79,184,201,0.08); border: 1px solid rgba(79,184,201,0.3); border-radius: 10px; padding: 8px 10px; animation: fadeIn 0.25s ease; }
+.rest-timer.rest-done { background: rgba(95,191,130,0.12); border-color: var(--good); animation: pop 0.35s cubic-bezier(0.34,1.56,0.64,1); }
+.rest-timer-bar { flex: 1; height: 6px; background: rgba(255,255,255,0.06); border-radius: 999px; overflow: hidden; }
+.rest-timer-fill { height: 100%; width: 100%; background: linear-gradient(90deg, var(--water), #6fd4e3); border-radius: 999px; box-shadow: 0 0 8px rgba(79,184,201,0.6); }
+.rest-timer.rest-done .rest-timer-fill { background: var(--good); box-shadow: 0 0 8px rgba(95,191,130,0.6); }
+.rest-timer-text { font-family: monospace; font-size: 12.5px; font-weight: 700; color: var(--water); min-width: 40px; text-align: right; }
+.rest-timer.rest-done .rest-timer-text { color: var(--good); }
+.rest-skip-btn { background: none; border: 1px solid rgba(139,149,163,0.4); border-radius: 7px; color: var(--muted); font-size: 10.5px; padding: 4px 8px; cursor: pointer; }
+.rest-skip-btn:active { border-color: var(--accent); color: var(--accent); }
 .ghost-btn { background: none; border: 1px dashed var(--line); border-radius: 10px; color: var(--muted); font-size: 12.5px; padding: 10px 12px; cursor: pointer; margin-top: 6px; width: 100%; transition: border-color 0.2s, color 0.2s; }
 .ghost-btn:active { border-color: var(--accent); color: var(--accent2); }
 
@@ -139,11 +160,34 @@ input[type=number] { -moz-appearance: textfield; }
 .badge-rest { background: rgba(139,149,163,0.15); color: var(--muted); border: 1px solid var(--muted); }
 .badge-optional { background: rgba(242,185,60,0.15); color: var(--accent2); border: 1px solid var(--accent2); box-shadow: 0 0 18px -4px rgba(242,185,60,0.5); }
 .program-card { gap: 10px; }
-.program-item { background: var(--surface2); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
-.program-item.done { opacity: 0.6; }
-.program-item-top { display: flex; justify-content: space-between; align-items: center; }
-.program-item-name { font-size: 14px; font-weight: 700; }
-.program-item-target { font-size: 12px; color: var(--muted); font-family: monospace; }
+.program-item { background: var(--surface2); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px; transition: background 0.3s, border-color 0.3s, box-shadow 0.3s, transform 0.3s; border: 1px solid transparent; }
+.program-item.complete { background: rgba(95,191,130,0.05); }
+.program-item.complete .program-item-name { color: var(--muted); }
+.program-item.active { border-color: rgba(255,83,48,0.45); box-shadow: 0 0 0 1px rgba(255,83,48,0.15), 0 8px 24px -10px rgba(255,83,48,0.35); background: linear-gradient(160deg, rgba(255,83,48,0.06), var(--surface2)); }
+.program-item.queued { opacity: 0.55; }
+
+.ex-badge { font-size: 9.5px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+.ex-badge-done { background: rgba(95,191,130,0.15); color: var(--good); }
+.ex-badge-active { background: rgba(255,83,48,0.18); color: var(--accent); animation: badge-blink 1.8s ease-in-out infinite; }
+.ex-badge-queued { background: rgba(139,149,163,0.12); color: var(--muted); }
+@keyframes badge-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+.program-item-sub { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.set-dots { display: flex; gap: 5px; }
+.set-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.1); border: 1px solid var(--line); transition: background 0.25s, border-color 0.25s, transform 0.25s; }
+.set-dot.filled { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 6px rgba(255,83,48,0.6); transform: scale(1.1); }
+
+.ex-complete-row { font-size: 12px; color: var(--good); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.extra-set-link { background: none; border: none; color: var(--muted); font-size: 11px; text-decoration: underline; cursor: pointer; padding: 0; }
+
+.workout-done-banner { text-align: center; font-size: 13.5px; font-weight: 700; color: var(--good); background: rgba(95,191,130,0.1); border: 1px solid rgba(95,191,130,0.4); border-radius: 12px; padding: 12px; animation: pop 0.4s cubic-bezier(0.34,1.56,0.64,1); box-shadow: 0 0 20px -6px rgba(95,191,130,0.5); }
+.program-item-top { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+.program-item-name { font-size: 14px; font-weight: 700; flex: 1; }
+.program-item-target { font-size: 12px; color: var(--muted); font-family: monospace; white-space: nowrap; }
+.hide-btn { background: none; border: none; color: var(--muted); font-size: 12px; cursor: pointer; padding: 2px 4px; opacity: 0.6; flex-shrink: 0; }
+.hide-btn:active { opacity: 1; color: var(--accent); }
+.hidden-note { font-size: 11.5px; color: var(--muted); padding: 4px 2px; line-height: 1.8; }
+.unhide-chip { background: var(--surface2); border: 1px solid var(--line); border-radius: 999px; color: var(--water); font-size: 11px; padding: 3px 9px; cursor: pointer; margin: 2px 3px 2px 0; }
 .program-item-inputs { display: flex; gap: 8px; align-items: flex-end; }
 .log-btn { background: var(--accent); border: none; border-radius: 9px; color: #1a0d08; font-weight: 700; font-size: 13px; padding: 9px 14px; cursor: pointer; white-space: nowrap; }
 
@@ -156,9 +200,52 @@ input[type=number] { -moz-appearance: textfield; }
 .guide-label { color: var(--text); font-weight: 600; }
 .guide-link { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; font-size: 12px; color: var(--water); text-decoration: none; font-weight: 600; }
 
+.video-thumb { position: relative; margin-top: 8px; border-radius: 10px; overflow: hidden; cursor: pointer; background: #000; aspect-ratio: 16/9; }
+.video-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; opacity: 0.75; }
+.video-play-btn {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 44px; height: 44px; border-radius: 50%;
+  background: rgba(255,83,48,0.92); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; padding-left: 3px;
+  box-shadow: 0 0 20px -2px rgba(255,83,48,0.8), 0 4px 14px rgba(0,0,0,0.5);
+  transition: transform 0.15s;
+}
+.video-thumb:active .video-play-btn { transform: translate(-50%, -50%) scale(0.88); }
+.video-data-badge { position: absolute; bottom: 6px; right: 7px; font-size: 9px; font-weight: 700; color: #fff; background: rgba(0,0,0,0.6); padding: 3px 7px; border-radius: 999px; letter-spacing: 0.02em; }
+.guide-info-note { font-size: 11px; color: var(--muted); line-height: 1.6; padding: 4px 2px 12px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+.video-embed { margin-top: 8px; border-radius: 10px; overflow: hidden; aspect-ratio: 16/9; background: #000; }
+.video-embed iframe { width: 100%; height: 100%; border: none; display: block; }
+
+.motion-demo { margin-top: 8px; background: rgba(255,255,255,0.02); border: 1px solid var(--line); border-radius: 10px; padding: 14px 12px; position: relative; }
+.motion-demo.motion-h { height: 44px; }
+.motion-demo.motion-v { height: 76px; padding-left: 40px; }
+
+.motion-h .motion-track { position: relative; height: 3px; background: rgba(255,255,255,0.08); border-radius: 999px; margin-top: 8px; }
+.motion-h .motion-dot { position: absolute; top: 50%; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px rgba(255,83,48,0.7); transform: translateY(-50%); animation: dot-move-h 2.4s ease-in-out infinite; }
+.motion-h.motion-rev .motion-dot { animation-name: dot-move-h-rev; }
+@keyframes dot-move-h { 0%, 100% { left: 6%; } 50% { left: 90%; } }
+@keyframes dot-move-h-rev { 0%, 100% { left: 90%; } 50% { left: 6%; } }
+.motion-h .motion-label { position: absolute; top: 2px; font-size: 9.5px; color: var(--muted); }
+.motion-h .motion-label-start { left: 0; }
+.motion-h .motion-label-end { right: 0; }
+
+.motion-v .motion-track { position: absolute; left: 18px; top: 12px; bottom: 12px; width: 3px; background: rgba(255,255,255,0.08); border-radius: 999px; }
+.motion-v .motion-dot { position: absolute; left: 50%; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px rgba(255,83,48,0.7); transform: translateX(-50%); animation: dot-move-v 2.4s ease-in-out infinite; }
+.motion-v.motion-rev .motion-dot { animation-name: dot-move-v-rev; }
+@keyframes dot-move-v { 0%, 100% { top: 4%; } 50% { top: 88%; } }
+@keyframes dot-move-v-rev { 0%, 100% { top: 88%; } 50% { top: 4%; } }
+.motion-v .motion-label { position: absolute; left: 40px; font-size: 10.5px; color: var(--muted); max-width: 140px; line-height: 1.3; }
+.motion-v .motion-label-start { top: 0; }
+.motion-v .motion-label-end { bottom: 0; }
+
 .sleep-row { display: flex; gap: 8px; flex-wrap: wrap; }
 .sleep-chip { background: var(--surface2); border: 1px solid var(--line); border-radius: 9px; color: var(--text); font-size: 13px; font-family: monospace; padding: 9px 14px; cursor: pointer; }
 .sleep-chip.active { background: var(--accent2); border-color: var(--accent2); color: #241a04; font-weight: 700; }
+
+.app-credit { margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--line); text-align: center; display: flex; flex-direction: column; gap: 4px; }
+.app-credit-name { font-size: 12.5px; font-weight: 700; color: var(--muted); letter-spacing: 0.03em; }
+.app-credit-sub { font-size: 10.5px; color: var(--muted); opacity: 0.6; letter-spacing: 0.04em; }
 
 .bottom-nav { position: sticky; bottom: 0; padding: 10px 12px 16px; background: linear-gradient(180deg, transparent, var(--bg) 30%); }
 .nav-dock {
@@ -193,79 +280,203 @@ input, textarea, button { font-family: inherit; }
   var DEFAULT_CHORES = ["Walk the dog", "Water the plants", "Cook rice", "Store errand"];
 
   var EXERCISE_GUIDE = [
-    { group: "Chest & Triceps", items: [
-      { name: "Barbell Bench Press", machine: "Flat bench + barbell rack", alt: "Machine chest press, or dumbbell floor press" },
-      { name: "Incline Dumbbell Press", machine: "Adjustable incline bench + dumbbells", alt: "Incline chest press machine" },
-      { name: "Cable Fly", machine: "Dual cable crossover station", alt: "Dumbbell fly on flat bench" },
-      { name: "Chest Press Machine", machine: "Seated chest press machine", alt: "Barbell or dumbbell bench press" },
-      { name: "Tricep Pushdown", machine: "Cable stack + rope/bar attachment", alt: "Dumbbell overhead extension" },
-      { name: "Overhead Tricep Extension", machine: "Cable or dumbbell, seated/standing", alt: "EZ-bar skullcrusher on bench" },
-      { name: "Dips", machine: "Dip station or assisted dip machine", alt: "Bench dips (feet on floor)" },
+    { group: "Chest", items: [
+      { name: "Machine Chest Press", machine: "Plate-loaded decline or seated chest press machine", alt: "Barbell or dumbbell bench press" },
+      { name: "Seated Machine Flyes", machine: "Pec deck / seated fly machine", alt: "Cable fly, or dumbbell fly on bench" },
     ]},
-    { group: "Back & Biceps", items: [
-      { name: "Lat Pulldown", machine: "Lat pulldown cable machine", alt: "Assisted pull-up machine" },
-      { name: "Barbell Row", machine: "Barbell + plates", alt: "T-bar row machine, or dumbbell row" },
-      { name: "Seated Cable Row", machine: "Low cable row station", alt: "One-arm dumbbell row on bench" },
-      { name: "Back Extension", machine: "Hyperextension bench", alt: "Superman hold on floor mat" },
-      { name: "Barbell Curl", machine: "Straight or EZ-bar", alt: "Dumbbell curl, alternating" },
-      { name: "Cable Curl", machine: "Low cable + straight bar", alt: "Dumbbell or barbell curl" },
-      { name: "Hammer Curl", machine: "Dumbbells, neutral grip", alt: "Cable rope hammer curl" },
+    { group: "Back", items: [
+      { name: "Lat Pulldown", machine: "Seated lat pulldown machine", alt: "Assisted pull-up machine" },
+      { name: "Seated Cable Row", machine: "Low cable row station (feet on platform)", alt: "One-arm dumbbell row on bench" },
     ]},
-    { group: "Shoulders & Forearms", items: [
-      { name: "Barbell Overhead Press", machine: "Barbell rack, standing", alt: "Seated shoulder press machine" },
-      { name: "Lateral Raise", machine: "Dumbbells, standing", alt: "Cable lateral raise, or machine lateral raise" },
-      { name: "Rear Delt Fly", machine: "Reverse pec-deck machine", alt: "Dumbbell bent-over rear fly" },
-      { name: "Front Raise", machine: "Dumbbells or plate", alt: "Cable front raise" },
-      { name: "Barbell Wrist Curl", machine: "Barbell, seated forearm on bench/thigh", alt: "Dumbbell wrist curl, one arm at a time" },
-      { name: "Reverse Curl", machine: "Barbell or EZ-bar, overhand grip", alt: "Cable reverse curl" },
-      { name: "Farmer's Carry", machine: "Heavy dumbbells or trap bar", alt: "Kettlebells, or plate carry" },
+    { group: "Shoulders", items: [
+      { name: "Machine Shoulder Press", machine: "Seated shoulder press machine", alt: "Barbell or dumbbell overhead press" },
+      { name: "Cable Lateral Raise", machine: "Functional trainer / cable tower, low pulley", alt: "Dumbbell lateral raise, standing" },
+      { name: "Rear Delt Fly (reverse grip)", machine: "Pec deck facing the pad (reverse grip), or functional trainer", alt: "Dumbbell bent-over rear fly" },
+    ]},
+    { group: "Triceps", items: [
+      { name: "Cable Rope Tricep Pushdown", machine: "Cable tower + rope attachment, high pulley", alt: "Dumbbell overhead extension" },
+      { name: "Kneeling Overhead Cable Tricep Extension", machine: "Cable tower, low pulley, kneeling facing away", alt: "Dumbbell or EZ-bar overhead extension" },
+    ]},
+    { group: "Biceps", items: [
+      { name: "Cable Bicep Curl", machine: "Cable tower, low pulley + straight bar or handle", alt: "Dumbbell or barbell curl" },
     ]},
     { group: "Legs", items: [
-      { name: "Barbell Squat", machine: "Squat rack + barbell", alt: "Leg press machine, or goblet squat with dumbbell" },
       { name: "Leg Press", machine: "Leg press machine", alt: "Barbell or dumbbell squat" },
       { name: "Romanian Deadlift", machine: "Barbell or dumbbells", alt: "Cable RDL, or single-leg dumbbell RDL" },
       { name: "Leg Curl", machine: "Seated or lying leg curl machine", alt: "Stability ball hamstring curl" },
       { name: "Leg Extension", machine: "Leg extension machine", alt: "Dumbbell between feet, seated extension" },
+      { name: "Hip Thrust Machine", machine: "Dedicated hip thrust machine", alt: "Barbell hip thrust on a bench" },
       { name: "Standing Calf Raise", machine: "Calf raise machine", alt: "Barbell or dumbbell calf raise on a step" },
-      { name: "Walking Lunges", machine: "Dumbbells, open floor space", alt: "Bodyweight lunges, or barbell lunges" },
     ]},
   ];
+  var MOTION_DEMO = {
+    "Machine Chest Press": { dir: "h", startLabel: "Arms bent", endLabel: "Arms extended" },
+    "Lat Pulldown": { dir: "v", reverse: true, startLabel: "Arms up", endLabel: "Bar to chest" },
+    "Seated Cable Row": { dir: "h", reverse: true, startLabel: "Arms extended", endLabel: "Handle to torso" },
+    "Machine Shoulder Press": { dir: "v", startLabel: "Elbows bent", endLabel: "Arms overhead" },
+    "Seated Machine Flyes": { dir: "h", startLabel: "Arms open wide", endLabel: "Arms together" },
+    "Cable Lateral Raise": { dir: "v", reverse: true, startLabel: "Arm at side", endLabel: "Arm at shoulder height" },
+    "Rear Delt Fly (reverse grip)": { dir: "h", reverse: true, startLabel: "Arms forward", endLabel: "Arms back, squeeze" },
+    "Cable Rope Tricep Pushdown": { dir: "v", startLabel: "Elbows bent", endLabel: "Arms extended down" },
+    "Kneeling Overhead Cable Tricep Extension": { dir: "v", reverse: true, startLabel: "Behind head", endLabel: "Arms extended up" },
+    "Cable Bicep Curl": { dir: "v", reverse: true, startLabel: "Arms extended", endLabel: "Curled to shoulder" },
+    "Leg Press": { dir: "h", startLabel: "Knees bent", endLabel: "Legs extended" },
+    "Romanian Deadlift": { dir: "v", startLabel: "Standing tall", endLabel: "Hinge, weight to shins" },
+    "Leg Curl": { dir: "h", reverse: true, startLabel: "Legs extended", endLabel: "Heels to glutes" },
+    "Leg Extension": { dir: "h", reverse: true, startLabel: "Knees bent", endLabel: "Legs extended" },
+    "Hip Thrust Machine": { dir: "v", reverse: true, startLabel: "Hips down", endLabel: "Hips up, squeeze glutes" },
+    "Standing Calf Raise": { dir: "v", reverse: true, startLabel: "Heels down", endLabel: "Up on toes" },
+    "Wrist Curl": { dir: "v", reverse: true, startLabel: "Wrist down", endLabel: "Wrist curled up" },
+    "Reverse Wrist Curl": { dir: "v", reverse: true, startLabel: "Wrist down", endLabel: "Wrist extended up" },
+    "Hammer Curl": { dir: "v", reverse: true, startLabel: "Arms extended", endLabel: "Curled to shoulder" },
+    "Farmer's Carry": { dir: "h", startLabel: "Standing tall", endLabel: "Walk forward" },
+  };
+
+  var TUTORIAL_VIDEO_ID = {
+    "Machine Chest Press": "pLofEAcfsO8",
+    "Lat Pulldown": "CAwf7n6Luuc",
+    "Seated Cable Row": "OeLb503NZHk",
+    "Machine Shoulder Press": "e5gJP7quyGk",
+    "Seated Machine Flyes": "Dbly77Jgbo8",
+    "Cable Lateral Raise": "zpbm-xRHB6k",
+    "Rear Delt Fly (reverse grip)": "e4dJ1QoxUtI",
+    "Cable Rope Tricep Pushdown": "d-ySLTHUgQA",
+    "Kneeling Overhead Cable Tricep Extension": "BqISL4dCn2g",
+    "Cable Bicep Curl": "5z4y7QRTx1w",
+    "Leg Press": "XNvaNipSycI",
+    "Romanian Deadlift": "aa57T45iFSE",
+    "Leg Curl": "fK0uZ3KRZRI",
+    "Leg Extension": "2lvdnQg04PM",
+    "Hip Thrust Machine": "UVucPKyQVLU",
+    "Standing Calf Raise": "ndQc4mz4mBU",
+  };
+
   function ytSearchUrl(name) {
     return "https://www.youtube.com/results?search_query=" + encodeURIComponent(name + " proper form tutorial");
   }
 
+  function motionDemoHtml(exName) {
+    var m = MOTION_DEMO[exName];
+    if (!m) return "";
+    var dirClass = m.dir === "h" ? "motion-h" : "motion-v";
+    var revClass = m.reverse ? " motion-rev" : "";
+    return (
+      '<div class="motion-demo ' + dirClass + revClass + '">' +
+        '<div class="motion-track"><div class="motion-dot"></div></div>' +
+        '<div class="motion-label motion-label-start">' + esc(m.startLabel) + '</div>' +
+        '<div class="motion-label motion-label-end">' + esc(m.endLabel) + '</div>' +
+      '</div>'
+    );
+  }
+
   var UPPER_DAY = { label: "UPPER", emoji: "&#128309;", exercises: [
-    { name: "Chest Press", sets: 3, repsMin: 8, repsMax: 12 },
-    { name: "Lat Pulldown", sets: 3, repsMin: 8, repsMax: 12 },
-    { name: "Seated Row", sets: 3, repsMin: 8, repsMax: 12 },
-    { name: "Shoulder Press", sets: 2, repsMin: 8, repsMax: 12 },
-    { name: "Lateral Raise", sets: 3, repsMin: 10, repsMax: 15 },
-    { name: "Biceps Curl", sets: 2, repsMin: 10, repsMax: 15 },
-    { name: "Triceps Pushdown", sets: 2, repsMin: 10, repsMax: 15 },
+    { name: "Machine Chest Press", sets: 4, repsMin: 8, repsMax: 12, restSec: 90 },
+    { name: "Lat Pulldown", sets: 4, repsMin: 8, repsMax: 12, restSec: 90 },
+    { name: "Seated Cable Row", sets: 3, repsMin: 8, repsMax: 12, restSec: 75 },
+    { name: "Machine Shoulder Press", sets: 3, repsMin: 8, repsMax: 12, restSec: 75 },
+    { name: "Seated Machine Flyes", sets: 3, repsMin: 12, repsMax: 15, restSec: 60 },
+    { name: "Cable Lateral Raise", sets: 3, repsMin: 12, repsMax: 15, restSec: 45 },
+    { name: "Rear Delt Fly (reverse grip)", sets: 3, repsMin: 12, repsMax: 15, restSec: 45 },
+    { name: "Cable Rope Tricep Pushdown", sets: 3, repsMin: 12, repsMax: 15, restSec: 60 },
+    { name: "Kneeling Overhead Cable Tricep Extension", sets: 2, repsMin: 12, repsMax: 15, restSec: 60 },
+    { name: "Cable Bicep Curl", sets: 3, repsMin: 12, repsMax: 15, restSec: 60 },
   ]};
   var LOWER_DAY = { label: "LOWER", emoji: "&#128994;", exercises: [
-    { name: "Leg Press", sets: 3, repsMin: 8, repsMax: 12 },
-    { name: "Leg Curl", sets: 3, repsMin: 8, repsMax: 12 },
-    { name: "Leg Extension", sets: 2, repsMin: 10, repsMax: 15 },
-    { name: "Calf Raise", sets: 3, repsMin: 10, repsMax: 15 },
+    { name: "Leg Press", sets: 4, repsMin: 8, repsMax: 12, restSec: 90 },
+    { name: "Romanian Deadlift", sets: 3, repsMin: 8, repsMax: 12, restSec: 90 },
+    { name: "Leg Curl", sets: 3, repsMin: 10, repsMax: 12, restSec: 60 },
+    { name: "Leg Extension", sets: 3, repsMin: 12, repsMax: 15, restSec: 60 },
+    { name: "Hip Thrust Machine", sets: 3, repsMin: 10, repsMax: 12, restSec: 75 },
+    { name: "Standing Calf Raise", sets: 4, repsMin: 12, repsMax: 15, restSec: 45 },
   ]};
   var FOREARM_DAY = { label: "FOREARM & WRIST", emoji: "&#129470;", exercises: [
-    { name: "Wrist Curl", sets: 3, repsMin: 15, repsMax: 20 },
-    { name: "Reverse Wrist Curl", sets: 3, repsMin: 15, repsMax: 20 },
-    { name: "Hammer Curl", sets: 3, repsMin: 12, repsMax: 15 },
-    { name: "Farmer's Carry", sets: 3, repsMin: 30, repsMax: 40 },
+    { name: "Wrist Curl", sets: 3, repsMin: 15, repsMax: 20, restSec: 45 },
+    { name: "Reverse Wrist Curl", sets: 3, repsMin: 15, repsMax: 20, restSec: 45 },
+    { name: "Hammer Curl", sets: 3, repsMin: 12, repsMax: 15, restSec: 60 },
+    { name: "Farmer's Carry", sets: 3, repsMin: 30, repsMax: 40, restSec: 60 },
   ]};
   // index 0=Sun ... 6=Sat, matches DAY_LABELS / Date.getDay()
   var WEEK_PROGRAM = [
-    { day: "rest", program: FOREARM_DAY },   // Sunday
-    { day: "upper", program: UPPER_DAY },    // Monday
-    { day: "rest", program: FOREARM_DAY },   // Tuesday
-    { day: "lower", program: LOWER_DAY },    // Wednesday
-    { day: "upper", program: UPPER_DAY },    // Thursday
-    { day: "lower", program: LOWER_DAY },    // Friday
-    { day: "optional", program: FOREARM_DAY }, // Saturday
+    { day: "optional", program: UPPER_DAY },   // Sunday — depends on you: Upper
+    { day: "lower", program: LOWER_DAY },      // Monday
+    { day: "rest", program: FOREARM_DAY },     // Tuesday
+    { day: "upper", program: UPPER_DAY },      // Wednesday
+    { day: "lower", program: LOWER_DAY },      // Thursday
+    { day: "upper", program: UPPER_DAY },      // Friday
+    { day: "optional", program: LOWER_DAY },   // Saturday — depends on you: Lower
   ];
-  var MIN_KG = 10;
+  var MIN_KG = 2.5;
+
+  var EASY_START_KG = {
+    "Machine Chest Press": 12.5,
+    "Lat Pulldown": 17.5,
+    "Seated Cable Row": 17.5,
+    "Machine Shoulder Press": 10,
+    "Seated Machine Flyes": 6,
+    "Cable Lateral Raise": 3,
+    "Rear Delt Fly (reverse grip)": 6,
+    "Cable Rope Tricep Pushdown": 8,
+    "Kneeling Overhead Cable Tricep Extension": 6,
+    "Cable Bicep Curl": 6,
+    "Leg Press": 30,
+    "Romanian Deadlift": 10,
+    "Leg Curl": 12.5,
+    "Leg Extension": 12.5,
+    "Hip Thrust Machine": 15,
+    "Standing Calf Raise": 20,
+  };
+
+  var restTimers = {}; // timerId -> interval handle
+
+  function startRestTimer(timerId, totalSec) {
+    if (restTimers[timerId]) { clearInterval(restTimers[timerId]); }
+    var el = document.getElementById(timerId);
+    if (!el) return;
+    var fill = el.querySelector(".rest-timer-fill");
+    var text = el.querySelector(".rest-timer-text");
+    var remaining = totalSec;
+    el.style.display = "flex";
+    el.classList.remove("rest-done");
+    fill.style.transition = "none";
+    fill.style.width = "100%";
+    void fill.offsetWidth;
+    fill.style.transition = "width 1s linear";
+    text.textContent = remaining + "s";
+
+    restTimers[timerId] = setInterval(function () {
+      remaining -= 1;
+      if (remaining <= 0) {
+        clearInterval(restTimers[timerId]);
+        delete restTimers[timerId];
+        fill.style.width = "0%";
+        text.textContent = "Ready!";
+        el.classList.add("rest-done");
+        if (navigator.vibrate) navigator.vibrate([120, 60, 120]);
+        setTimeout(function () {
+          if (el) el.style.display = "none";
+        }, 2200);
+      } else {
+        fill.style.width = (remaining / totalSec * 100) + "%";
+        text.textContent = remaining + "s";
+      }
+    }, 1000);
+  }
+
+  function stopRestTimer(timerId) {
+    if (restTimers[timerId]) { clearInterval(restTimers[timerId]); delete restTimers[timerId]; }
+    var el = document.getElementById(timerId);
+    if (el) el.style.display = "none";
+  }
+
+  function getHidden() { return get("hidden-exercises", []); }
+  function hideExercise(name) {
+    var h = getHidden();
+    if (h.indexOf(name) === -1) { h.push(name); set("hidden-exercises", h); }
+  }
+  function unhideExercise(name) {
+    var h = getHidden().filter(function (n) { return n !== name; });
+    set("hidden-exercises", h);
+  }
 
   function getProgress() { return get("exercise-progress", {}); }
   function saveProgress(name, kg, reps) {
@@ -311,6 +522,7 @@ input, textarea, button { font-family: inherit; }
   var state = {
     tab: "today",
     guideOpen: false,
+    extraUnlocked: {},
     dayKey: todayKey(),
     schedule: get("weekly-schedule", null) || defaultSchedule(),
     exercises: get("exercise-list", []),
@@ -354,7 +566,13 @@ input, textarea, button { font-family: inherit; }
     return (
       '<div class="header">' +
         '<div class="header-top">' +
-          '<div class="brand"><span class="brand-mark">&#9670;</span> TRAINING LOG</div>' +
+          '<div class="brand">' +
+            '<span class="brand-mark">C</span>' +
+            '<div class="brand-text">' +
+              '<div class="brand-name">CRISDANIEL</div>' +
+              '<div class="brand-tagline">TRAINING LOG</div>' +
+            '</div>' +
+          '</div>' +
           '<div class="date-nav">' +
             '<button class="arrow" data-action="prevday">&#8249;</button>' +
             '<button class="label" data-action="gotoday" style="opacity:' + (isToday ? 1 : 0.65) + '">' + (isToday ? '<span class="live-dot"></span>' : '') + dateLabel(state.dayKey) + '</button>' +
@@ -440,7 +658,14 @@ input, textarea, button { font-family: inherit; }
         '</div>'
       );
     }).join("");
-    return '<div class="tab-pane"><div class="section-label">&#128197; Weekly Schedule</div><div class="plain-list">' + rows + '</div></div>';
+    return (
+      '<div class="tab-pane"><div class="section-label">&#128197; Weekly Schedule</div><div class="plain-list">' + rows + '</div>' +
+        '<div class="app-credit">' +
+          '<span class="app-credit-name">Crisdaniel&rsquo;s Training Log</span>' +
+          '<span class="app-credit-sub">Designed by Crisdaniel &middot; Built with Claude</span>' +
+        '</div>' +
+      '</div>'
+    );
   }
 
   function workoutTabHtml() {
@@ -451,31 +676,84 @@ input, textarea, button { font-family: inherit; }
     var prog = dayProgram.program;
     var progress = getProgress();
 
-    var loggedNames = {};
-    todaysSets.forEach(function (w) { loggedNames[w.exercise] = true; });
-
     var badgeClass = dayProgram.day === "upper" ? "badge-upper" : dayProgram.day === "lower" ? "badge-lower" : dayProgram.day === "optional" ? "badge-optional" : "badge-rest";
 
-    var exerciseRows = prog.exercises.map(function (ex) {
+    var hidden = getHidden();
+    var visibleExercises = prog.exercises.filter(function (ex) { return hidden.indexOf(ex.name) === -1; });
+    var hiddenInThisProgram = prog.exercises.filter(function (ex) { return hidden.indexOf(ex.name) !== -1; });
+
+    // count sets already logged today per exercise (each log entry = 1 set)
+    var setCounts = {};
+    todaysSets.forEach(function (w) { setCounts[w.exercise] = (setCounts[w.exercise] || 0) + 1; });
+
+    var activeFound = false;
+
+    var exerciseRows = visibleExercises.map(function (ex) {
       var saved = progress[ex.name] || {};
-      var defaultKg = saved.kg != null ? saved.kg : MIN_KG;
+      var defaultKg = saved.kg != null ? saved.kg : (EASY_START_KG[ex.name] != null ? EASY_START_KG[ex.name] : MIN_KG);
       var defaultReps = saved.reps != null ? saved.reps : ex.repsMin;
-      var done = !!loggedNames[ex.name];
+      var doneCount = setCounts[ex.name] || 0;
+      var isComplete = doneCount >= ex.sets && !state.extraUnlocked[ex.name];
       var idAttr = ex.name.replace(/[^a-zA-Z0-9]/g, "-");
-      return (
-        '<div class="program-item' + (done ? ' done' : '') + '">' +
-          '<div class="program-item-top">' +
-            '<span class="program-item-name">' + esc(ex.name) + (done ? ' &#9989;' : '') + '</span>' +
-            '<span class="program-item-target">' + ex.sets + ' &times; ' + ex.repsMin + '-' + ex.repsMax + '</span>' +
-          '</div>' +
+      var isActive = false;
+      if (!isComplete && !activeFound) { isActive = true; activeFound = true; }
+
+      var stateClass = isComplete ? " complete" : (isActive ? " active" : " queued");
+      var currentSetNum = doneCount + 1;
+
+      var badge = isComplete
+        ? '<span class="ex-badge ex-badge-done">&#9989; Done</span>'
+        : (isActive ? '<span class="ex-badge ex-badge-active">&#9679; Current</span>' : '<span class="ex-badge ex-badge-queued">Up next</span>');
+
+      var progressDots = "";
+      for (var i = 0; i < ex.sets; i++) {
+        progressDots += '<span class="set-dot' + (i < doneCount ? ' filled' : '') + '"></span>';
+      }
+
+      var bodyContent;
+      if (isComplete) {
+        bodyContent = '<div class="ex-complete-row">All ' + ex.sets + ' sets logged.<button class="extra-set-link" data-action="unlockextra" data-name="' + esc(ex.name) + '">+ log an extra set</button></div>';
+      } else {
+        bodyContent = (
           '<div class="program-item-inputs">' +
             '<div class="num-field"><span class="field-label">Reps</span><input class="num-input" id="reps-' + idAttr + '" type="number" min="1" value="' + defaultReps + '" /></div>' +
-            '<div class="num-field"><span class="field-label">Kg (min 10)</span><input class="num-input" id="kg-' + idAttr + '" type="number" min="' + MIN_KG + '" step="0.5" value="' + defaultKg + '" /></div>' +
-            '<button class="log-btn" data-action="logprogram" data-name="' + esc(ex.name) + '" data-sets="' + ex.sets + '" data-repsid="reps-' + idAttr + '" data-kgid="kg-' + idAttr + '">Log</button>' +
+            '<div class="num-field"><span class="field-label">Kg (min 2.5)</span><input class="num-input" id="kg-' + idAttr + '" type="number" min="' + MIN_KG + '" step="0.5" value="' + defaultKg + '" /></div>' +
+            '<button class="log-btn" data-action="logprogram" data-name="' + esc(ex.name) + '" data-sets="1" data-repsid="reps-' + idAttr + '" data-kgid="kg-' + idAttr + '" data-rest="' + ex.restSec + '" data-timerid="timer-' + idAttr + '" data-idattr="' + idAttr + '">Log Set ' + currentSetNum + '</button>' +
+          '</div>'
+        );
+      }
+
+      return (
+        '<div class="program-item' + stateClass + '" id="item-' + idAttr + '">' +
+          '<div class="program-item-top">' +
+            '<span class="program-item-name">' + esc(ex.name) + '</span>' +
+            badge +
+            '<button class="hide-btn" data-action="hideex" data-name="' + esc(ex.name) + '" title="No machine for this? Hide it">&#10005;</button>' +
+          '</div>' +
+          '<div class="program-item-sub">' +
+            '<span class="set-dots">' + progressDots + '</span>' +
+            '<span class="program-item-target">' + doneCount + '/' + ex.sets + ' &middot; ' + ex.repsMin + '-' + ex.repsMax + ' reps</span>' +
+          '</div>' +
+          bodyContent +
+          '<div class="rest-timer" id="timer-' + idAttr + '" style="display:none">' +
+            '<div class="rest-timer-bar"><div class="rest-timer-fill"></div></div>' +
+            '<span class="rest-timer-text"></span>' +
+            '<button class="rest-skip-btn" data-action="skiprest" data-timerid="timer-' + idAttr + '">Skip</button>' +
           '</div>' +
         '</div>'
       );
     }).join("");
+
+    var allComplete = visibleExercises.length > 0 && visibleExercises.every(function (ex) { return (setCounts[ex.name] || 0) >= ex.sets; });
+    var completionBanner = allComplete ? '<div class="workout-done-banner">&#127881; Workout complete! Every set logged for today.</div>' : "";
+
+    var hiddenRow = hiddenInThisProgram.length === 0 ? "" : (
+      '<div class="hidden-note">' + hiddenInThisProgram.length + ' exercise' + (hiddenInThisProgram.length === 1 ? "" : "s") + ' hidden: ' +
+      hiddenInThisProgram.map(function (ex) {
+        return '<button class="unhide-chip" data-action="unhideex" data-name="' + esc(ex.name) + '">+ ' + esc(ex.name) + '</button>';
+      }).join(" ") +
+      '</div>'
+    );
 
     var todayRows = todaysSets.length === 0
       ? '<div class="empty-state">Nothing logged yet — log your first exercise below.</div>'
@@ -495,7 +773,9 @@ input, textarea, button { font-family: inherit; }
         '<div class="program-header">' +
           '<span class="program-badge ' + badgeClass + '">' + prog.emoji + ' ' + prog.label + '</span>' +
         '</div>' +
+        completionBanner +
         '<div class="card program-card">' + exerciseRows + '</div>' +
+        hiddenRow +
         '<div class="section-label">&#128293; Logged Today · ' + todaysSets.length + ' set' + (todaysSets.length === 1 ? "" : "s") + '</div>' +
         '<div class="card">' + todayRows + '</div>' +
         historyRows +
@@ -510,22 +790,37 @@ input, textarea, button { font-family: inherit; }
     if (state.guideOpen) {
       body = EXERCISE_GUIDE.map(function (group) {
         var rows = group.items.map(function (ex) {
+          var vid = TUTORIAL_VIDEO_ID[ex.name];
+          var idAttr = ex.name.replace(/[^a-zA-Z0-9]/g, "-");
+          var videoBlock = vid
+            ? (
+                '<div class="video-thumb" id="video-' + idAttr + '" data-action="loadvideo" data-vid="' + vid + '" data-videoid="video-' + idAttr + '">' +
+                  '<img src="https://img.youtube.com/vi/' + vid + '/mqdefault.jpg" loading="lazy" alt="' + esc(ex.name) + ' tutorial thumbnail" />' +
+                  '<span class="video-play-btn">&#9654;</span>' +
+                  '<span class="video-data-badge">&#128246; Uses data</span>' +
+                '</div>'
+              )
+            : '<a class="guide-link" href="' + ytSearchUrl(ex.name) + '" target="_blank" rel="noopener">&#9654; Search tutorial</a>';
           return (
             '<div class="guide-item">' +
               '<div class="guide-name">' + esc(ex.name) + '</div>' +
               '<div class="guide-row"><span class="guide-label">Machine:</span> ' + esc(ex.machine) + '</div>' +
               '<div class="guide-row"><span class="guide-label">No machine? Try:</span> ' + esc(ex.alt) + '</div>' +
-              '<a class="guide-link" href="' + ytSearchUrl(ex.name) + '" target="_blank" rel="noopener">&#9654; Watch tutorial</a>' +
+              motionDemoHtml(ex.name) +
+              videoBlock +
             '</div>'
           );
         }).join("");
         return '<div class="guide-group"><div class="guide-group-title">' + esc(group.group) + '</div>' + rows + '</div>';
       }).join("");
     }
+    var infoNote = state.guideOpen
+      ? '<div class="guide-info-note">&#9679; The moving dot works fully offline. &#128246; The video thumbnail below it streams live and uses mobile data.</div>'
+      : "";
     return (
       '<div class="section-label">&#128218; Exercise Guide</div>' +
       '<button class="ghost-btn" data-action="toggleguide">' + toggleLabel + '</button>' +
-      (state.guideOpen ? '<div class="card guide-wrap">' + body + '</div>' : '')
+      (state.guideOpen ? '<div class="card guide-wrap">' + infoNote + body + '</div>' : '')
     );
   }
 
@@ -709,14 +1004,26 @@ input, textarea, button { font-family: inherit; }
       saveDayLog(Object.assign({}, state.dayLog, { creatineTaken: !state.dayLog.creatineTaken }));
     } else if (action === "logprogram") {
       var exName = el.getAttribute("data-name");
-      var sets = Number(el.getAttribute("data-sets")) || 0;
       var repsInput = document.getElementById(el.getAttribute("data-repsid"));
       var kgInput = document.getElementById(el.getAttribute("data-kgid"));
       var reps = Number(repsInput.value) || 0;
       var kg = Math.max(MIN_KG, Number(kgInput.value) || MIN_KG);
-      var entry = { id: String(Date.now()), date: state.dayKey, exercise: exName, sets: sets, reps: reps, weight: kg };
+      var entry = { id: String(Date.now()), date: state.dayKey, exercise: exName, sets: 1, reps: reps, weight: kg };
       saveWorkoutLog([entry].concat(state.workoutLog));
       saveProgress(exName, kg, reps);
+      if (state.extraUnlocked[exName]) delete state.extraUnlocked[exName];
+      var restSec = Number(el.getAttribute("data-rest")) || 60;
+      var timerId = el.getAttribute("data-timerid");
+      if (timerId) startRestTimer(timerId, restSec);
+      setTimeout(function () {
+        var nextActive = document.querySelector(".program-item.active");
+        if (nextActive) nextActive.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 450);
+    } else if (action === "unlockextra") {
+      state.extraUnlocked[el.getAttribute("data-name")] = true;
+      render();
+    } else if (action === "skiprest") {
+      stopRestTimer(el.getAttribute("data-timerid"));
     } else if (action === "delworkout") {
       var id = el.getAttribute("data-id");
       saveWorkoutLog(state.workoutLog.filter(function (w) { return w.id !== id; }));
@@ -751,6 +1058,19 @@ input, textarea, button { font-family: inherit; }
     } else if (action === "toggleguide") {
       state.guideOpen = !state.guideOpen;
       render();
+    } else if (action === "hideex") {
+      hideExercise(el.getAttribute("data-name"));
+      render();
+    } else if (action === "unhideex") {
+      unhideExercise(el.getAttribute("data-name"));
+      render();
+    } else if (action === "loadvideo") {
+      var vid = el.getAttribute("data-vid");
+      var containerId = el.getAttribute("data-videoid");
+      var container = document.getElementById(containerId);
+      if (container) {
+        container.outerHTML = '<div class="video-embed"><iframe src="https://www.youtube.com/embed/' + vid + '?autoplay=1&rel=0" title="Exercise tutorial" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>';
+      }
     }
   }
 
