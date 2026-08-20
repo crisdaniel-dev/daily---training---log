@@ -198,6 +198,9 @@ input[type=number] { -moz-appearance: textfield; }
 .guide-name { font-size: 13.5px; font-weight: 700; margin-bottom: 4px; }
 .guide-row { font-size: 12px; color: var(--muted); line-height: 1.5; }
 .guide-label { color: var(--text); font-weight: 600; }
+.guide-steps { margin: 8px 0 0; padding-left: 18px; font-size: 12px; color: var(--muted); line-height: 1.7; }
+.guide-steps li { padding-left: 2px; }
+.guide-steps li::marker { color: var(--accent); font-weight: 700; }
 .guide-link { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; font-size: 12px; color: var(--water); text-decoration: none; font-weight: 600; }
 
 .video-thumb { position: relative; margin-top: 8px; border-radius: 10px; overflow: hidden; cursor: pointer; background: #000; aspect-ratio: 16/9; }
@@ -280,39 +283,66 @@ input, textarea, button { font-family: inherit; }
   var DEFAULT_CHORES = ["Walk the dog", "Water the plants", "Cook rice", "Store errand"];
 
   var EXERCISE_GUIDE = [
-    { group: "Chest", items: [
-      { name: "Machine Chest Press", machine: "Plate-loaded decline or seated chest press machine", alt: "Barbell or dumbbell bench press" },
-      { name: "Seated Machine Flyes", machine: "Pec deck / seated fly machine", alt: "Cable fly, or dumbbell fly on bench" },
+    { group: "Chest (Upper-A)", items: [
+      { name: "Machine Chest Press", machine: "Plate-loaded decline or seated chest press machine", alt: "Barbell or dumbbell bench press",
+        steps: ["Adjust seat so handles line up with mid-chest", "Grip handles, press forward until arms extend (don't lock elbows)", "Pause briefly at full extension", "Return with control, keeping shoulder blades on the pad"] },
+      { name: "Seated Machine Flyes", machine: "Pec deck / seated fly machine", alt: "Cable fly, or dumbbell fly on bench",
+        steps: ["Adjust seat so handles sit at chest height", "Start with arms wide, slight bend in elbows", "Bring handles together in an arc in front of your chest", "Squeeze at the center, then return slowly"] },
     ]},
-    { group: "Back", items: [
-      { name: "Lat Pulldown", machine: "Seated lat pulldown machine", alt: "Assisted pull-up machine" },
-      { name: "Seated Cable Row", machine: "Low cable row station (feet on platform)", alt: "One-arm dumbbell row on bench" },
+    { group: "Shoulders (Upper-A)", items: [
+      { name: "Machine Shoulder Press", machine: "Seated shoulder press machine", alt: "Barbell or dumbbell overhead press",
+        steps: ["Adjust seat so handles start at shoulder height", "Press straight overhead until arms extend", "Avoid arching your lower back", "Lower with control back to shoulder height"] },
+      { name: "Cable Lateral Raise", machine: "Functional trainer / cable tower, low pulley", alt: "Dumbbell lateral raise, standing",
+        steps: ["Set pulley to lowest position, stand side-on to the machine", "Grip handle with far hand, slight bend in elbow", "Raise arm out to the side until shoulder height", "Lower slowly, resisting the cable's pull"] },
+      { name: "Rear Delt Fly (reverse grip)", machine: "Pec deck facing the pad (reverse grip), or functional trainer", alt: "Dumbbell bent-over rear fly",
+        steps: ["Face into a reverse pec-deck, or use the cable tower facing the machine", "Grip handles with arms extended in front", "Pull arms back and apart, squeezing shoulder blades together", "Return with control"] },
     ]},
-    { group: "Shoulders", items: [
-      { name: "Machine Shoulder Press", machine: "Seated shoulder press machine", alt: "Barbell or dumbbell overhead press" },
-      { name: "Cable Lateral Raise", machine: "Functional trainer / cable tower, low pulley", alt: "Dumbbell lateral raise, standing" },
-      { name: "Rear Delt Fly (reverse grip)", machine: "Pec deck facing the pad (reverse grip), or functional trainer", alt: "Dumbbell bent-over rear fly" },
+    { group: "Triceps (Upper-A)", items: [
+      { name: "Cable Rope Tricep Pushdown", machine: "Cable tower + rope attachment, high pulley", alt: "Dumbbell overhead extension",
+        steps: ["Attach rope to a high pulley, grip with palms facing in", "Keep elbows pinned to your sides", "Push down until arms fully extend, spreading the rope apart", "Return with control, don't let elbows drift forward"] },
+      { name: "Kneeling Overhead Cable Tricep Extension", machine: "Cable tower, low pulley, kneeling facing away", alt: "Dumbbell or EZ-bar overhead extension",
+        steps: ["Kneel facing away from a low pulley with rope attached", "Start with hands behind your head, elbows pointing up", "Extend arms overhead until straight", "Lower back behind your head with control"] },
     ]},
-    { group: "Triceps", items: [
-      { name: "Cable Rope Tricep Pushdown", machine: "Cable tower + rope attachment, high pulley", alt: "Dumbbell overhead extension" },
-      { name: "Kneeling Overhead Cable Tricep Extension", machine: "Cable tower, low pulley, kneeling facing away", alt: "Dumbbell or EZ-bar overhead extension" },
+    { group: "Back (Upper-B)", items: [
+      { name: "Lat Pulldown", machine: "Seated lat pulldown machine", alt: "Assisted pull-up machine",
+        steps: ["Grip the bar wider than shoulder width", "Pull the bar down to your upper chest, driving elbows down and back", "Squeeze your lats at the bottom", "Let the bar rise with control"] },
+      { name: "Seated Cable Row", machine: "Low cable row station (feet on platform)", alt: "One-arm dumbbell row on bench",
+        steps: ["Sit with feet on the platform, knees slightly bent", "Grab the handle, back straight, lean slightly forward to start", "Pull the handle to your torso, driving elbows back", "Return with control, letting your torso lean forward for a full stretch"] },
+      { name: "Straight-Arm Pulldown", machine: "Cable tower, high pulley, straight bar or rope", alt: "Dumbbell pullover on a bench",
+        steps: ["Attach a straight bar or rope to a high pulley", "Stand back, arms extended overhead, slight bend in elbows", "Pull the bar down to your thighs, keeping elbows nearly straight", "Squeeze your lats at the bottom, let it rise with control"] },
     ]},
-    { group: "Biceps", items: [
-      { name: "Cable Bicep Curl", machine: "Cable tower, low pulley + straight bar or handle", alt: "Dumbbell or barbell curl" },
+    { group: "Biceps (Upper-B)", items: [
+      { name: "Cable Bicep Curl", machine: "Cable tower, low pulley + straight bar or handle", alt: "Dumbbell or barbell curl",
+        steps: ["Attach a straight bar or handle to a low pulley", "Keep elbows pinned to your sides", "Curl the weight up toward your shoulders", "Lower with control, don't swing your body"] },
+      { name: "Cable Hammer Curl", machine: "Cable tower, low pulley + rope attachment", alt: "Dumbbell hammer curl",
+        steps: ["Attach a rope to a low pulley, grip with palms facing each other", "Keep elbows tucked in at your sides", "Curl the rope up toward your shoulders, keeping the neutral grip", "Lower with control"] },
     ]},
     { group: "Legs", items: [
-      { name: "Leg Press", machine: "Leg press machine", alt: "Barbell or dumbbell squat" },
-      { name: "Romanian Deadlift", machine: "Barbell or dumbbells", alt: "Cable RDL, or single-leg dumbbell RDL" },
-      { name: "Leg Curl", machine: "Seated or lying leg curl machine", alt: "Stability ball hamstring curl" },
-      { name: "Leg Extension", machine: "Leg extension machine", alt: "Dumbbell between feet, seated extension" },
-      { name: "Hip Thrust Machine", machine: "Dedicated hip thrust machine", alt: "Barbell hip thrust on a bench" },
-      { name: "Standing Calf Raise", machine: "Calf raise machine", alt: "Barbell or dumbbell calf raise on a step" },
+      { name: "Barbell Back Squat", machine: "Power rack + barbell", alt: "Leg press machine, or goblet squat with dumbbell",
+        steps: ["Set the bar in the rack at upper-chest height, step under and rest it across your upper back", "Unrack, step back, feet shoulder-width apart", "Bend at hips and knees together until thighs are at least parallel", "Drive through your heels to stand back up"] },
+      { name: "Romanian Deadlift", machine: "Power rack + barbell", alt: "Dumbbell RDL, or single-leg dumbbell RDL",
+        steps: ["Hold the bar at hip height, feet hip-width apart", "Push your hips back, keeping the bar close to your legs", "Lower until you feel a stretch in your hamstrings, knees only slightly bent", "Drive your hips forward to return to standing"] },
+      { name: "Leg Press", machine: "Leg press machine", alt: "Barbell or dumbbell squat",
+        steps: ["Sit in the machine, feet shoulder-width on the platform", "Lower the platform until knees reach about 90 degrees", "Press through your heels to extend, without locking knees", "Control the weight back down"] },
+      { name: "Dumbbell Calf Raise", machine: "A pair of dumbbells (yours at home or gym)", alt: "Calf raise machine, or barbell calf raise",
+        steps: ["Hold a dumbbell in each hand, stand on flat ground or a step", "Rise up onto your toes as high as possible", "Pause and squeeze at the top", "Lower your heels back down under control"] },
+    ]},
+    { group: "Forearm & Wrist (Tuesday)", items: [
+      { name: "Wrist Curl", machine: "Barbell or dumbbell, seated forearm on bench/thigh", alt: "Dumbbell wrist curl, one arm at a time",
+        steps: ["Sit holding a barbell or dumbbell, forearms on your thighs, palms up", "Let the weight roll down toward your fingers", "Curl your wrists upward, squeezing your forearms", "Lower with control"] },
+      { name: "Reverse Wrist Curl", machine: "Barbell or EZ-bar, overhand grip", alt: "Cable reverse curl",
+        steps: ["Same setup as wrist curl, but palms facing down", "Let the weight lower your wrists", "Extend your wrists upward", "Lower with control"] },
+      { name: "Hammer Curl", machine: "Dumbbells, neutral grip", alt: "Cable rope hammer curl",
+        steps: ["Hold a dumbbell in each hand, palms facing each other", "Curl the weight up keeping the neutral grip", "Squeeze at the top", "Lower with control"] },
+      { name: "Farmer's Carry", machine: "Heavy dumbbells or trap bar", alt: "Kettlebells, or plate carry",
+        steps: ["Hold a heavy dumbbell in each hand at your sides", "Stand tall, shoulders back", "Walk forward for the set time, keeping your grip tight", "Maintain posture, don't let shoulders round forward"] },
     ]},
   ];
   var MOTION_DEMO = {
     "Machine Chest Press": { dir: "h", startLabel: "Arms bent", endLabel: "Arms extended" },
     "Lat Pulldown": { dir: "v", reverse: true, startLabel: "Arms up", endLabel: "Bar to chest" },
     "Seated Cable Row": { dir: "h", reverse: true, startLabel: "Arms extended", endLabel: "Handle to torso" },
+    "Straight-Arm Pulldown": { dir: "v", reverse: true, startLabel: "Arms overhead", endLabel: "Bar to thighs" },
     "Machine Shoulder Press": { dir: "v", startLabel: "Elbows bent", endLabel: "Arms overhead" },
     "Seated Machine Flyes": { dir: "h", startLabel: "Arms open wide", endLabel: "Arms together" },
     "Cable Lateral Raise": { dir: "v", reverse: true, startLabel: "Arm at side", endLabel: "Arm at shoulder height" },
@@ -320,12 +350,11 @@ input, textarea, button { font-family: inherit; }
     "Cable Rope Tricep Pushdown": { dir: "v", startLabel: "Elbows bent", endLabel: "Arms extended down" },
     "Kneeling Overhead Cable Tricep Extension": { dir: "v", reverse: true, startLabel: "Behind head", endLabel: "Arms extended up" },
     "Cable Bicep Curl": { dir: "v", reverse: true, startLabel: "Arms extended", endLabel: "Curled to shoulder" },
+    "Cable Hammer Curl": { dir: "v", reverse: true, startLabel: "Arms extended", endLabel: "Curled to shoulder" },
+    "Barbell Back Squat": { dir: "v", reverse: true, startLabel: "Standing tall", endLabel: "Thighs parallel" },
     "Leg Press": { dir: "h", startLabel: "Knees bent", endLabel: "Legs extended" },
     "Romanian Deadlift": { dir: "v", startLabel: "Standing tall", endLabel: "Hinge, weight to shins" },
-    "Leg Curl": { dir: "h", reverse: true, startLabel: "Legs extended", endLabel: "Heels to glutes" },
-    "Leg Extension": { dir: "h", reverse: true, startLabel: "Knees bent", endLabel: "Legs extended" },
-    "Hip Thrust Machine": { dir: "v", reverse: true, startLabel: "Hips down", endLabel: "Hips up, squeeze glutes" },
-    "Standing Calf Raise": { dir: "v", reverse: true, startLabel: "Heels down", endLabel: "Up on toes" },
+    "Dumbbell Calf Raise": { dir: "v", reverse: true, startLabel: "Heels down", endLabel: "Up on toes" },
     "Wrist Curl": { dir: "v", reverse: true, startLabel: "Wrist down", endLabel: "Wrist curled up" },
     "Reverse Wrist Curl": { dir: "v", reverse: true, startLabel: "Wrist down", endLabel: "Wrist extended up" },
     "Hammer Curl": { dir: "v", reverse: true, startLabel: "Arms extended", endLabel: "Curled to shoulder" },
@@ -336,6 +365,7 @@ input, textarea, button { font-family: inherit; }
     "Machine Chest Press": "pLofEAcfsO8",
     "Lat Pulldown": "CAwf7n6Luuc",
     "Seated Cable Row": "OeLb503NZHk",
+    "Straight-Arm Pulldown": "duHQk2PxNos",
     "Machine Shoulder Press": "e5gJP7quyGk",
     "Seated Machine Flyes": "Dbly77Jgbo8",
     "Cable Lateral Raise": "zpbm-xRHB6k",
@@ -343,12 +373,11 @@ input, textarea, button { font-family: inherit; }
     "Cable Rope Tricep Pushdown": "d-ySLTHUgQA",
     "Kneeling Overhead Cable Tricep Extension": "BqISL4dCn2g",
     "Cable Bicep Curl": "5z4y7QRTx1w",
+    "Cable Hammer Curl": "VY4walmoM-I",
+    "Barbell Back Squat": "f-KL4VNN96E",
     "Leg Press": "XNvaNipSycI",
     "Romanian Deadlift": "aa57T45iFSE",
-    "Leg Curl": "fK0uZ3KRZRI",
-    "Leg Extension": "2lvdnQg04PM",
-    "Hip Thrust Machine": "UVucPKyQVLU",
-    "Standing Calf Raise": "ndQc4mz4mBU",
+    "Dumbbell Calf Raise": "H6WptvjXkgw",
   };
 
   function ytSearchUrl(name) {
@@ -369,41 +398,44 @@ input, textarea, button { font-family: inherit; }
     );
   }
 
-  var UPPER_DAY = { label: "UPPER", emoji: "&#128309;", exercises: [
-    { name: "Machine Chest Press", sets: 4, repsMin: 8, repsMax: 12, restSec: 90 },
-    { name: "Lat Pulldown", sets: 4, repsMin: 8, repsMax: 12, restSec: 90 },
-    { name: "Seated Cable Row", sets: 3, repsMin: 8, repsMax: 12, restSec: 75 },
-    { name: "Machine Shoulder Press", sets: 3, repsMin: 8, repsMax: 12, restSec: 75 },
-    { name: "Seated Machine Flyes", sets: 3, repsMin: 12, repsMax: 15, restSec: 60 },
-    { name: "Cable Lateral Raise", sets: 3, repsMin: 12, repsMax: 15, restSec: 45 },
-    { name: "Rear Delt Fly (reverse grip)", sets: 3, repsMin: 12, repsMax: 15, restSec: 45 },
-    { name: "Cable Rope Tricep Pushdown", sets: 3, repsMin: 12, repsMax: 15, restSec: 60 },
-    { name: "Kneeling Overhead Cable Tricep Extension", sets: 2, repsMin: 12, repsMax: 15, restSec: 60 },
-    { name: "Cable Bicep Curl", sets: 3, repsMin: 12, repsMax: 15, restSec: 60 },
+  // COMPOUND = 45s rest, ISOLATION = 30s rest
+  var UPPER_DAY_A = { label: "UPPER &middot; PUSH", emoji: "&#128309;", exercises: [
+    { name: "Machine Chest Press", sets: 4, repsMin: 8, repsMax: 12, restSec: 45 },
+    { name: "Machine Shoulder Press", sets: 4, repsMin: 8, repsMax: 12, restSec: 45 },
+    { name: "Seated Machine Flyes", sets: 3, repsMin: 12, repsMax: 15, restSec: 30 },
+    { name: "Cable Lateral Raise", sets: 3, repsMin: 12, repsMax: 15, restSec: 30 },
+    { name: "Rear Delt Fly (reverse grip)", sets: 3, repsMin: 12, repsMax: 15, restSec: 30 },
+    { name: "Cable Rope Tricep Pushdown", sets: 3, repsMin: 12, repsMax: 15, restSec: 30 },
+    { name: "Kneeling Overhead Cable Tricep Extension", sets: 3, repsMin: 12, repsMax: 15, restSec: 30 },
+  ]};
+  var UPPER_DAY_B = { label: "UPPER &middot; PULL", emoji: "&#128309;", exercises: [
+    { name: "Lat Pulldown", sets: 4, repsMin: 8, repsMax: 12, restSec: 45 },
+    { name: "Seated Cable Row", sets: 4, repsMin: 8, repsMax: 12, restSec: 45 },
+    { name: "Straight-Arm Pulldown", sets: 3, repsMin: 12, repsMax: 15, restSec: 30 },
+    { name: "Cable Bicep Curl", sets: 3, repsMin: 12, repsMax: 15, restSec: 30 },
+    { name: "Cable Hammer Curl", sets: 3, repsMin: 12, repsMax: 15, restSec: 30 },
   ]};
   var LOWER_DAY = { label: "LOWER", emoji: "&#128994;", exercises: [
-    { name: "Leg Press", sets: 4, repsMin: 8, repsMax: 12, restSec: 90 },
-    { name: "Romanian Deadlift", sets: 3, repsMin: 8, repsMax: 12, restSec: 90 },
-    { name: "Leg Curl", sets: 3, repsMin: 10, repsMax: 12, restSec: 60 },
-    { name: "Leg Extension", sets: 3, repsMin: 12, repsMax: 15, restSec: 60 },
-    { name: "Hip Thrust Machine", sets: 3, repsMin: 10, repsMax: 12, restSec: 75 },
-    { name: "Standing Calf Raise", sets: 4, repsMin: 12, repsMax: 15, restSec: 45 },
+    { name: "Barbell Back Squat", sets: 4, repsMin: 8, repsMax: 12, restSec: 45 },
+    { name: "Romanian Deadlift", sets: 3, repsMin: 8, repsMax: 12, restSec: 45 },
+    { name: "Leg Press", sets: 4, repsMin: 10, repsMax: 15, restSec: 45 },
+    { name: "Dumbbell Calf Raise", sets: 4, repsMin: 15, repsMax: 20, restSec: 30 },
   ]};
   var FOREARM_DAY = { label: "FOREARM & WRIST", emoji: "&#129470;", exercises: [
-    { name: "Wrist Curl", sets: 3, repsMin: 15, repsMax: 20, restSec: 45 },
-    { name: "Reverse Wrist Curl", sets: 3, repsMin: 15, repsMax: 20, restSec: 45 },
-    { name: "Hammer Curl", sets: 3, repsMin: 12, repsMax: 15, restSec: 60 },
-    { name: "Farmer's Carry", sets: 3, repsMin: 30, repsMax: 40, restSec: 60 },
+    { name: "Wrist Curl", sets: 3, repsMin: 15, repsMax: 20, restSec: 30 },
+    { name: "Reverse Wrist Curl", sets: 3, repsMin: 15, repsMax: 20, restSec: 30 },
+    { name: "Hammer Curl", sets: 3, repsMin: 12, repsMax: 15, restSec: 30 },
+    { name: "Farmer's Carry", sets: 3, repsMin: 30, repsMax: 40, restSec: 30 },
   ]};
   // index 0=Sun ... 6=Sat, matches DAY_LABELS / Date.getDay()
   var WEEK_PROGRAM = [
-    { day: "optional", program: UPPER_DAY },   // Sunday — depends on you: Upper
-    { day: "lower", program: LOWER_DAY },      // Monday
-    { day: "rest", program: FOREARM_DAY },     // Tuesday
-    { day: "upper", program: UPPER_DAY },      // Wednesday
-    { day: "lower", program: LOWER_DAY },      // Thursday
-    { day: "upper", program: UPPER_DAY },      // Friday
-    { day: "optional", program: LOWER_DAY },   // Saturday — depends on you: Lower
+    { day: "optional", program: UPPER_DAY_A },  // Sunday — depends on you: Upper Push
+    { day: "lower", program: LOWER_DAY },       // Monday
+    { day: "rest", program: FOREARM_DAY },      // Tuesday
+    { day: "upper", program: UPPER_DAY_A },     // Wednesday — Upper Push
+    { day: "lower", program: LOWER_DAY },       // Thursday
+    { day: "upper", program: UPPER_DAY_B },     // Friday — Upper Pull
+    { day: "optional", program: LOWER_DAY },    // Saturday — depends on you: Lower
   ];
   var MIN_KG = 2.5;
 
@@ -411,6 +443,7 @@ input, textarea, button { font-family: inherit; }
     "Machine Chest Press": 12.5,
     "Lat Pulldown": 17.5,
     "Seated Cable Row": 17.5,
+    "Straight-Arm Pulldown": 8,
     "Machine Shoulder Press": 10,
     "Seated Machine Flyes": 6,
     "Cable Lateral Raise": 3,
@@ -418,17 +451,50 @@ input, textarea, button { font-family: inherit; }
     "Cable Rope Tricep Pushdown": 8,
     "Kneeling Overhead Cable Tricep Extension": 6,
     "Cable Bicep Curl": 6,
+    "Cable Hammer Curl": 6,
+    "Barbell Back Squat": 20,
+    "Romanian Deadlift": 20,
     "Leg Press": 30,
-    "Romanian Deadlift": 10,
-    "Leg Curl": 12.5,
-    "Leg Extension": 12.5,
-    "Hip Thrust Machine": 15,
-    "Standing Calf Raise": 20,
+    "Dumbbell Calf Raise": 8,
   };
 
   var restTimers = {}; // timerId -> interval handle
 
+  var audioCtx = null;
+  function unlockAudio() {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === "suspended") audioCtx.resume();
+    } catch (e) { /* audio not available */ }
+  }
+  function playRestChime() {
+    try {
+      if (!audioCtx) return;
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      var now = audioCtx.currentTime;
+      // two-tone ascending "ding-dong" style notification, original synth (not a copied sound file)
+      var tones = [
+        { freq: 880, start: 0, dur: 0.14 },
+        { freq: 1318.5, start: 0.13, dur: 0.22 },
+      ];
+      tones.forEach(function (t) {
+        var osc = audioCtx.createOscillator();
+        var gain = audioCtx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(t.freq, now + t.start);
+        gain.gain.setValueAtTime(0.0001, now + t.start);
+        gain.gain.exponentialRampToValueAtTime(0.22, now + t.start + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + t.start + t.dur);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now + t.start);
+        osc.stop(now + t.start + t.dur + 0.02);
+      });
+    } catch (e) { console.warn("chime failed", e); }
+  }
+
   function startRestTimer(timerId, totalSec) {
+    unlockAudio();
     if (restTimers[timerId]) { clearInterval(restTimers[timerId]); }
     var el = document.getElementById(timerId);
     if (!el) return;
@@ -452,6 +518,7 @@ input, textarea, button { font-family: inherit; }
         text.textContent = "Ready!";
         el.classList.add("rest-done");
         if (navigator.vibrate) navigator.vibrate([120, 60, 120]);
+        playRestChime();
         setTimeout(function () {
           if (el) el.style.display = "none";
         }, 2200);
@@ -818,11 +885,15 @@ input, textarea, button { font-family: inherit; }
                 '</div>'
               )
             : '<a class="guide-link" href="' + ytSearchUrl(ex.name) + '" target="_blank" rel="noopener">&#9654; Search tutorial</a>';
+          var stepsHtml = ex.steps && ex.steps.length
+            ? '<ol class="guide-steps">' + ex.steps.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join("") + '</ol>'
+            : "";
           return (
             '<div class="guide-item">' +
               '<div class="guide-name">' + esc(ex.name) + '</div>' +
               '<div class="guide-row"><span class="guide-label">Machine:</span> ' + esc(ex.machine) + '</div>' +
               '<div class="guide-row"><span class="guide-label">No machine? Try:</span> ' + esc(ex.alt) + '</div>' +
+              stepsHtml +
               motionDemoHtml(ex.name) +
               videoBlock +
             '</div>'
