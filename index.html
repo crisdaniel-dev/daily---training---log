@@ -278,6 +278,27 @@ input[type=number] { -moz-appearance: textfield; }
 .prog-arrow { font-size: 12px; margin: 0 1px; }
 .prog-arrow.prog-up { color: var(--good); }
 .prog-arrow.prog-down { color: var(--accent); }
+
+.stats-strip { flex-direction: row; }
+.stats-strip .stat-value { font-size: 20px; display: flex; align-items: center; gap: 3px; }
+
+.session-card {
+  background: linear-gradient(160deg, var(--surface), rgba(27,32,40,0.7));
+  border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
+  box-shadow: 0 8px 20px -12px rgba(0,0,0,0.6);
+}
+.session-header { width: 100%; background: none; border: none; padding: 13px 14px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; gap: 8px; }
+.session-header-left { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.session-date { font-size: 12.5px; font-weight: 700; color: var(--text); letter-spacing: 0.02em; }
+.session-badge { font-size: 10px; padding: 4px 10px; }
+.session-header-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.session-count { font-size: 10.5px; color: var(--muted); font-family: monospace; white-space: nowrap; }
+.session-chevron { display: inline-block; color: var(--muted); font-size: 16px; transition: transform 0.25s; transform: rotate(90deg); }
+.session-chevron-open { transform: rotate(-90deg); color: var(--accent); }
+.session-body { padding: 0 14px 14px; display: flex; flex-direction: column; gap: 7px; animation: fadeSlideUp 0.25s ease; }
+.session-ex-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; background: var(--surface2); border-radius: 9px; padding: 8px 11px; }
+.session-ex-name { font-size: 12.5px; font-weight: 600; }
+.session-ex-stat { font-size: 11px; color: var(--accent2); white-space: nowrap; }
 .app-credit-name { font-size: 12.5px; font-weight: 700; color: var(--muted); letter-spacing: 0.03em; }
 .app-credit-sub { font-size: 10.5px; color: var(--muted); opacity: 0.6; letter-spacing: 0.04em; }
 
@@ -622,6 +643,7 @@ input, textarea, button { font-family: inherit; }
     guideOpen: false,
     extraUnlocked: {},
     historyExpandedDate: null,
+    expandedSessions: {},
     dayKey: todayKey(),
     schedule: get("weekly-schedule", null) || defaultSchedule(),
     exercises: get("exercise-list", []),
@@ -1122,12 +1144,121 @@ input, textarea, button { font-family: inherit; }
     return '<div class="section-label">&#128200; Weight Progression</div><div class="card prog-card">' + rows + '</div>';
   }
 
+  function computeStreak() {
+    var d = new Date();
+    d.setHours(0, 0, 0, 0);
+    var streak = 0;
+    var isFirst = true;
+    while (true) {
+      var dateStr = todayKey(d);
+      var dayType = WEEK_PROGRAM[d.getDay()].day;
+      var hasLog = state.workoutLog.some(function (w) { return w.date === dateStr; });
+      if (isFirst && dayType !== "rest" && !hasLog) {
+        // today's mandatory session isn't done yet — don't break the streak, just don't count today
+        isFirst = false;
+        d.setDate(d.getDate() - 1);
+        continue;
+      }
+      isFirst = false;
+      if (dayType === "rest" || hasLog) {
+        streak += 1;
+        d.setDate(d.getDate() - 1);
+        if (streak > 400) break; // safety cap
+      } else {
+        break;
+      }
+    }
+    return streak;
+  }
+
+  function statsStripHtml() {
+    var streak = computeStreak();
+    var sessionDates = {};
+    var totalVolume = 0;
+    state.workoutLog.forEach(function (w) {
+      sessionDates[w.date] = true;
+      totalVolume += (Number(w.reps) || 0) * (Number(w.weight) || 0);
+    });
+    var sessionCount = Object.keys(sessionDates).length;
+    var volumeDisplay = totalVolume >= 1000 ? (totalVolume / 1000).toFixed(1) + "t" : Math.round(totalVolume) + "kg";
+
+    return (
+      '<div class="card stats-strip">' +
+        '<div class="stat-block"><div class="stat-label">Streak</div><div class="stat-value accent">' + streak + '&#128293;</div><div class="stat-sub">days active</div></div>' +
+        '<div class="stat-block"><div class="stat-label">Sessions</div><div class="stat-value">' + sessionCount + '</div><div class="stat-sub">logged total</div></div>' +
+        '<div class="stat-block"><div class="stat-label">Volume</div><div class="stat-value">' + volumeDisplay + '</div><div class="stat-sub">total lifted</div></div>' +
+      '</div>'
+    );
+  }
+
+  function sessionsHtml() {
+    var byDate = {};
+    state.workoutLog.forEach(function (w) {
+      if (!byDate[w.date]) byDate[w.date] = [];
+      byDate[w.date].push(w);
+    });
+    var dates = Object.keys(byDate).sort().reverse();
+
+    if (dates.length === 0) {
+      return '<div class="section-label">&#128193; Sessions</div><div class="card"><div class="empty-state">No sessions logged yet — your completed workouts will appear here, grouped by day.</div></div>';
+    }
+
+    var cards = dates.slice(0, 30).map(function (dateStr, i) {
+      var idx = new Date(dateStr + "T00:00:00").getDay();
+      var dayProgram = WEEK_PROGRAM[idx];
+      var prog = dayProgram.program;
+      var badgeClass = dayProgram.day === "upper" ? "badge-upper" : dayProgram.day === "lower" ? "badge-lower" : dayProgram.day === "optional" ? "badge-optional" : "badge-rest";
+      var entries = byDate[dateStr];
+
+      var byExercise = {};
+      entries.forEach(function (w) {
+        if (!byExercise[w.exercise]) byExercise[w.exercise] = [];
+        byExercise[w.exercise].push(w);
+      });
+      var exerciseNames = Object.keys(byExercise);
+      var totalSets = entries.length;
+      var isExpanded = state.expandedSessions[dateStr] !== undefined ? state.expandedSessions[dateStr] : (i === 0);
+
+      var exerciseRows = exerciseNames.map(function (name) {
+        var sets = byExercise[name];
+        var maxKg = Math.max.apply(null, sets.map(function (s) { return s.weight; }));
+        var lastReps = sets[sets.length - 1].reps;
+        return (
+          '<div class="session-ex-row">' +
+            '<span class="session-ex-name">' + esc(name) + '</span>' +
+            '<span class="session-ex-stat mono">' + sets.length + ' sets &middot; ' + lastReps + ' reps @ ' + maxKg + 'kg</span>' +
+          '</div>'
+        );
+      }).join("");
+
+      return (
+        '<div class="session-card">' +
+          '<button class="session-header" data-action="togglesession" data-date="' + dateStr + '">' +
+            '<div class="session-header-left">' +
+              '<span class="session-date">' + dateLabel(dateStr) + '</span>' +
+              '<span class="program-badge session-badge ' + badgeClass + '">' + prog.emoji + ' ' + prog.label + '</span>' +
+            '</div>' +
+            '<div class="session-header-right">' +
+              '<span class="session-count">' + exerciseNames.length + ' ex &middot; ' + totalSets + ' sets</span>' +
+              '<span class="session-chevron' + (isExpanded ? " session-chevron-open" : "") + '">&#8250;</span>' +
+            '</div>' +
+          '</button>' +
+          (isExpanded ? '<div class="session-body">' + exerciseRows + '</div>' : "") +
+        '</div>'
+      );
+    }).join("");
+
+    return '<div class="section-label">&#128193; Sessions</div><div class="plain-list">' + cards + '</div>';
+  }
+
   function historyTabHtml() {
     return (
       '<div class="tab-pane">' +
+        statsStripHtml() +
         '<div class="section-label">&#128197; Activity</div>' +
         '<div class="card">' + calendarHtml() + '</div>' +
         dayDetailHtml() +
+        sessionsHtml() +
         progressionHtml() +
       '</div>'
     );
@@ -1323,6 +1454,10 @@ input, textarea, button { font-family: inherit; }
     } else if (action === "viewhistoryday") {
       var tappedDate = el.getAttribute("data-date");
       state.historyExpandedDate = state.historyExpandedDate === tappedDate ? null : tappedDate;
+      render();
+    } else if (action === "togglesession") {
+      var sessDate = el.getAttribute("data-date");
+      state.expandedSessions[sessDate] = !state.expandedSessions[sessDate];
       render();
     } else if (action === "loadvideo") {
       var vid = el.getAttribute("data-vid");
