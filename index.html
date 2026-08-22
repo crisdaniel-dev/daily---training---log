@@ -495,6 +495,13 @@ input, textarea, button { font-family: inherit; }
     { name: "Cable Bicep Curl", sets: 3, repsMin: 12, repsMax: 15, restSec: 30 },
     { name: "Cable Hammer Curl", sets: 3, repsMin: 12, repsMax: 15, restSec: 30 },
   ]};
+  var UPPER_DAY_C = { label: "UPPER &middot; BALANCED", emoji: "&#128309;", exercises: [
+    { name: "Machine Chest Press", sets: 3, repsMin: 8, repsMax: 12, restSec: 45 },
+    { name: "Lat Pulldown", sets: 3, repsMin: 8, repsMax: 12, restSec: 45 },
+    { name: "Machine Shoulder Press", sets: 3, repsMin: 8, repsMax: 12, restSec: 45 },
+    { name: "Cable Bicep Curl", sets: 3, repsMin: 12, repsMax: 15, restSec: 30 },
+    { name: "Cable Rope Tricep Pushdown", sets: 3, repsMin: 12, repsMax: 15, restSec: 30 },
+  ]};
   var LOWER_DAY = { label: "LOWER", emoji: "&#128994;", exercises: [
     { name: "Barbell Back Squat", sets: 4, repsMin: 8, repsMax: 12, restSec: 45 },
     { name: "Romanian Deadlift", sets: 3, repsMin: 8, repsMax: 12, restSec: 45 },
@@ -507,15 +514,16 @@ input, textarea, button { font-family: inherit; }
     { name: "Hammer Curl", sets: 3, repsMin: 12, repsMax: 15, restSec: 30 },
     { name: "Farmer's Carry", sets: 3, repsMin: 30, repsMax: 40, restSec: 30 },
   ]};
+  var REST_DAY = { label: "REST DAY", emoji: "&#128564;", exercises: [] };
   // index 0=Sun ... 6=Sat, matches DAY_LABELS / Date.getDay()
   var WEEK_PROGRAM = [
-    { day: "optional", program: UPPER_DAY_A },  // Sunday — depends on you: Upper Push
-    { day: "lower", program: LOWER_DAY },       // Monday
+    { day: "rest", program: REST_DAY },         // Sunday — full rest
+    { day: "upper", program: UPPER_DAY_A },     // Monday — Upper Push
     { day: "rest", program: FOREARM_DAY },      // Tuesday
-    { day: "upper", program: UPPER_DAY_A },     // Wednesday — Upper Push
-    { day: "lower", program: LOWER_DAY },       // Thursday
-    { day: "upper", program: UPPER_DAY_B },     // Friday — Upper Pull
-    { day: "optional", program: LOWER_DAY },    // Saturday — depends on you: Lower
+    { day: "lower", program: LOWER_DAY },       // Wednesday
+    { day: "upper", program: UPPER_DAY_B },     // Thursday — Upper Pull
+    { day: "lower", program: LOWER_DAY },       // Friday
+    { day: "upper", program: UPPER_DAY_C },     // Saturday — Upper Balanced
   ];
   var MIN_KG = 2.5;
 
@@ -552,23 +560,42 @@ input, textarea, button { font-family: inherit; }
       if (!audioCtx) return;
       if (audioCtx.state === "suspended") audioCtx.resume();
       var now = audioCtx.currentTime;
-      // two-tone ascending "ding-dong" style notification, original synth (not a copied sound file)
+
+      // master limiter so layered oscillators don't clip while staying loud
+      var compressor = audioCtx.createDynamicsCompressor();
+      compressor.threshold.setValueAtTime(-8, now);
+      compressor.knee.setValueAtTime(6, now);
+      compressor.ratio.setValueAtTime(12, now);
+      compressor.attack.setValueAtTime(0.001, now);
+      compressor.release.setValueAtTime(0.15, now);
+      compressor.connect(audioCtx.destination);
+
+      var masterGain = audioCtx.createGain();
+      masterGain.gain.setValueAtTime(1.0, now);
+      masterGain.connect(compressor);
+
+      // bright two-tone "ding-dong" — each tone layered with a square-wave harmonic for extra volume/cut-through
       var tones = [
-        { freq: 880, start: 0, dur: 0.14 },
-        { freq: 1318.5, start: 0.13, dur: 0.22 },
+        { freq: 880, start: 0, dur: 0.16 },
+        { freq: 1318.5, start: 0.13, dur: 0.26 },
       ];
       tones.forEach(function (t) {
-        var osc = audioCtx.createOscillator();
-        var gain = audioCtx.createGain();
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(t.freq, now + t.start);
-        gain.gain.setValueAtTime(0.0001, now + t.start);
-        gain.gain.exponentialRampToValueAtTime(0.22, now + t.start + 0.015);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + t.start + t.dur);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start(now + t.start);
-        osc.stop(now + t.start + t.dur + 0.02);
+        [
+          { type: "sine", peak: 0.95 },
+          { type: "square", peak: 0.35 },
+        ].forEach(function (layer) {
+          var osc = audioCtx.createOscillator();
+          var gain = audioCtx.createGain();
+          osc.type = layer.type;
+          osc.frequency.setValueAtTime(t.freq, now + t.start);
+          gain.gain.setValueAtTime(0.0001, now + t.start);
+          gain.gain.exponentialRampToValueAtTime(layer.peak, now + t.start + 0.008);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + t.start + t.dur);
+          osc.connect(gain);
+          gain.connect(masterGain);
+          osc.start(now + t.start);
+          osc.stop(now + t.start + t.dur + 0.02);
+        });
       });
     } catch (e) { console.warn("chime failed", e); }
   }
@@ -812,7 +839,9 @@ input, textarea, button { font-family: inherit; }
     var weekSessions = computeWeekSessions();
 
     var workoutRows = todaysSets.length === 0
-      ? '<div class="empty-state">No sets logged yet today (' + dayProgram.program.label + ' day). Go to Workout to log one.</div>'
+      ? (dayProgram.program.exercises.length === 0
+          ? '<div class="empty-state">&#128564; Full rest day — nothing scheduled.</div>'
+          : '<div class="empty-state">No sets logged yet today (' + dayProgram.program.label + ' day). Go to Workout to log one.</div>')
       : '<div class="plain-list">' + todaysSets.map(function (w) {
           return '<div class="row"><span class="row-name">' + esc(w.exercise) + '</span><span class="mono">' + w.sets + '&times;' + w.reps + ' @ ' + w.weight + 'kg</span></div>';
         }).join("") + '</div>';
@@ -951,16 +980,23 @@ input, textarea, button { font-family: inherit; }
           return '<div class="row"><span class="row-name">' + esc(w.exercise) + '</span><span class="mono">' + w.sets + '&times;' + w.reps + ' @ ' + w.weight + 'kg</span><button class="icon-btn" data-action="delworkout" data-id="' + w.id + '">&#10005;</button></div>';
         }).join("") + '</div>';
 
+    var isRestDay = prog.exercises.length === 0;
+    var programCardBody = isRestDay
+      ? '<div class="empty-state">&#128564; Nothing scheduled today. Full rest — let your muscles recover so you come back stronger tomorrow.</div>'
+      : exerciseRows;
+
     return (
       '<div class="tab-pane">' +
         '<div class="program-header">' +
           '<span class="program-badge ' + badgeClass + '">' + prog.emoji + ' ' + prog.label + '</span>' +
         '</div>' +
         completionBanner +
-        '<div class="card program-card">' + exerciseRows + '</div>' +
+        '<div class="card program-card">' + programCardBody + '</div>' +
         hiddenRow +
-        '<div class="section-label">&#128293; Logged Today · ' + todaysSets.length + ' set' + (todaysSets.length === 1 ? "" : "s") + '</div>' +
-        '<div class="card">' + todayRows + '</div>' +
+        (isRestDay ? "" : (
+          '<div class="section-label">&#128293; Logged Today · ' + todaysSets.length + ' set' + (todaysSets.length === 1 ? "" : "s") + '</div>' +
+          '<div class="card">' + todayRows + '</div>'
+        )) +
         exerciseGuideHtml() +
       '</div>'
     );
