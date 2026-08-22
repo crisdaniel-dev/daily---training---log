@@ -262,6 +262,9 @@ input[type=number] { -moz-appearance: textfield; }
 .cal-cell.cal-future { background: rgba(255,255,255,0.03); cursor: default; }
 .cal-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
 .cal-legend-item { display: flex; align-items: center; gap: 5px; font-size: 10.5px; color: var(--muted); }
+.cal-cell.cal-pad { background: transparent; cursor: default; }
+.cal-year-nav { display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 12px; }
+.cal-year-label { font-family: monospace; font-size: 14px; font-weight: 700; color: var(--text); letter-spacing: 0.05em; min-width: 44px; text-align: center; }
 .cal-dot { width: 9px; height: 9px; border-radius: 3px; display: inline-block; }
 .cal-dot.cal-done { background: var(--good); }
 .cal-dot.cal-rest { background: #9b6dd6; }
@@ -299,6 +302,31 @@ input[type=number] { -moz-appearance: textfield; }
 .session-ex-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; background: var(--surface2); border-radius: 9px; padding: 8px 11px; }
 .session-ex-name { font-size: 12.5px; font-weight: 600; }
 .session-ex-stat { font-size: 11px; color: var(--accent2); white-space: nowrap; }
+
+.ex-picker-row { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 4px; -webkit-overflow-scrolling: touch; }
+.ex-picker-chip { flex-shrink: 0; background: var(--surface2); border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: 11px; font-weight: 600; padding: 7px 13px; cursor: pointer; white-space: nowrap; transition: background 0.2s, border-color 0.2s, color 0.2s; }
+.ex-picker-chip.active { background: rgba(255,83,48,0.15); border-color: var(--accent); color: var(--accent); }
+
+.line-graph-wrap { display: flex; flex-direction: column; gap: 10px; }
+.line-graph-svg { width: 100%; height: 170px; overflow: visible; }
+.graph-dot { fill: var(--bg); stroke: var(--accent); stroke-width: 2; cursor: pointer; transition: r 0.15s; }
+.graph-dot-active { fill: var(--accent); stroke: #fff; stroke-width: 1.5; filter: drop-shadow(0 0 4px rgba(255,83,48,0.8)); }
+.graph-axis-label { fill: var(--muted); font-size: 9px; font-family: monospace; }
+.graph-gridline { stroke: rgba(255,255,255,0.06); stroke-width: 1; stroke-dasharray: 3 3; }
+.graph-tooltip { display: flex; align-items: baseline; gap: 8px; background: var(--surface2); border: 1px solid rgba(255,83,48,0.3); border-radius: 10px; padding: 9px 13px; align-self: flex-start; }
+.graph-tooltip-kg { font-size: 18px; font-weight: 800; color: var(--accent); font-family: monospace; text-shadow: 0 0 10px rgba(255,83,48,0.5); }
+.graph-tooltip-date { font-size: 11px; color: var(--muted); }
+
+.progress-toggle-link { background: none; border: none; color: var(--water); font-size: 11.5px; font-weight: 600; padding: 4px 2px; cursor: pointer; align-self: center; margin-top: 4px; }
+
+.converter-row { display: flex; align-items: flex-end; gap: 10px; }
+.converter-field { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+.converter-input { text-align: center; font-family: monospace; font-size: 16px; font-weight: 700; color: var(--accent2); }
+.converter-eq { font-size: 16px; color: var(--muted); padding-bottom: 10px; }
+
+.stack-table { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.stack-row { display: flex; justify-content: space-between; align-items: center; background: var(--surface2); border-radius: 8px; padding: 7px 10px; }
+.stack-plate-num { font-size: 10.5px; color: var(--muted); }
 .app-credit-name { font-size: 12.5px; font-weight: 700; color: var(--muted); letter-spacing: 0.03em; }
 .app-credit-sub { font-size: 10.5px; color: var(--muted); opacity: 0.6; letter-spacing: 0.04em; }
 
@@ -608,6 +636,11 @@ input, textarea, button { font-family: inherit; }
     d = d || new Date();
     return d.toISOString().slice(0, 10);
   }
+  function fullDateLabel(dateStr) {
+    var d = new Date(dateStr + "T00:00:00");
+    return monthAbbr(d.getMonth()) + " " + d.getDate() + ", " + d.getFullYear();
+  }
+
   function dateLabel(key) {
     var d = new Date(key + "T00:00:00");
     return DAY_LABELS[d.getDay()] + " · " + (d.getMonth() + 1) + "/" + d.getDate();
@@ -644,6 +677,10 @@ input, textarea, button { font-family: inherit; }
     extraUnlocked: {},
     historyExpandedDate: null,
     expandedSessions: {},
+    historyYear: new Date().getFullYear(),
+    progressExercise: null,
+    progressPointIdx: null,
+    progressShowAll: false,
     dayKey: todayKey(),
     schedule: get("weekly-schedule", null) || defaultSchedule(),
     exercises: get("exercise-list", []),
@@ -750,13 +787,29 @@ input, textarea, button { font-family: inherit; }
     );
   }
 
+  function computeWeekSessions() {
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+    var weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - today.getDay());
+    var count = 0;
+    for (var i = 0; i < 7; i++) {
+      var d = new Date(weekStart);
+      d.setDate(weekStart.getDate() + i);
+      var dateStr = todayKey(d);
+      if (dateStr > todayKey()) break;
+      if (state.workoutLog.some(function (w) { return w.date === dateStr; })) count++;
+    }
+    return count;
+  }
+
   function todayTabHtml() {
     var todaysSets = state.workoutLog.filter(function (w) { return w.date === state.dayKey; });
-    var proteinTotal = state.dayLog.meals.reduce(function (s, m) { return s + (Number(m.protein) || 0); }, 0);
-    var waterPct = Math.min(100, Math.round((state.dayLog.waterMl / WATER_GOAL_ML) * 100));
     var idx = new Date(state.dayKey + "T00:00:00").getDay();
     var sched = state.schedule[idx];
     var dayProgram = WEEK_PROGRAM[idx];
+    var streak = computeStreak();
+    var weekSessions = computeWeekSessions();
 
     var workoutRows = todaysSets.length === 0
       ? '<div class="empty-state">No sets logged yet today (' + dayProgram.program.label + ' day). Go to Workout to log one.</div>'
@@ -768,9 +821,9 @@ input, textarea, button { font-family: inherit; }
       '<div class="tab-pane">' +
         '<div class="section-label">&#128197; Today</div>' +
         '<div class="card"><div class="card-row">' +
-          statBlock("Water", (state.dayLog.waterMl / 1000).toFixed(1) + "L", waterPct + "% of goal") +
           statBlock("Creatine", state.dayLog.creatineTaken ? "Taken" : "Not yet", state.dayLog.creatineTaken ? "✓ logged" : "—", state.dayLog.creatineTaken) +
-          statBlock("Protein", proteinTotal + "g", state.dayLog.meals.length + " meal" + (state.dayLog.meals.length === 1 ? "" : "s")) +
+          statBlock("This Week", weekSessions + " days", "sessions logged") +
+          statBlock("Streak", streak + " days", streak > 0 ? "keep it going &#128293;" : "start today") +
         '</div></div>' +
         '<div class="section-label">&#127939; Workout</div>' +
         '<div class="card">' + workoutRows + '</div>' +
@@ -957,28 +1010,14 @@ input, textarea, button { font-family: inherit; }
     );
   }
 
-  function hydrationTabHtml() {
-    var pct = Math.min(1, state.dayLog.waterMl / WATER_GOAL_ML);
-    var r = 54, c = 2 * Math.PI * r;
-    var offset = c - c * pct;
+  function toolsTabHtml() {
+    var stackKgs = [10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70];
+    var stackRows = stackKgs.map(function (kg, i) {
+      return '<div class="stack-row"><span class="stack-plate-num">Plate ' + (i + 1) + '</span><span class="mono">' + kg + 'kg &middot; ' + Math.round(kg * 2.20462) + 'lb</span></div>';
+    }).join("");
+
     return (
       '<div class="tab-pane">' +
-        '<div class="section-label">&#128167; Hydration</div>' +
-        '<div class="card" style="align-items:center">' +
-          '<div class="plate-wrap">' +
-            '<svg width="140" height="140" viewBox="0 0 140 140">' +
-              '<circle cx="70" cy="70" r="' + r + '" fill="none" stroke="var(--line)" stroke-width="10" />' +
-              '<circle cx="70" cy="70" r="' + r + '" fill="none" stroke="var(--water)" stroke-width="10" stroke-dasharray="' + c + '" stroke-dashoffset="' + offset + '" stroke-linecap="round" transform="rotate(-90 70 70)" />' +
-            '</svg>' +
-            '<div class="plate-center"><div class="plate-value">' + (state.dayLog.waterMl / 1000).toFixed(1) + 'L</div><div class="plate-goal">of ' + (WATER_GOAL_ML / 1000).toFixed(1) + 'L</div></div>' +
-          '</div>' +
-          '<div class="quick-add-row">' +
-            '<button class="quick-add-btn" data-action="addwater" data-ml="250">+250ml</button>' +
-            '<button class="quick-add-btn" data-action="addwater" data-ml="500">+500ml</button>' +
-            '<button class="quick-add-btn" data-action="addwater" data-ml="1000">+1000ml</button>' +
-            '<button class="quick-add-ghost" data-action="addwater" data-ml="-250">&minus;250ml</button>' +
-          '</div>' +
-        '</div>' +
         '<div class="section-label">&#128293; Creatine</div>' +
         '<div class="card">' +
           '<button class="creatine-btn' + (state.dayLog.creatineTaken ? ' active' : '') + '" data-action="togglecreatine">' +
@@ -986,6 +1025,20 @@ input, textarea, button { font-family: inherit; }
             (state.dayLog.creatineTaken ? "Creatine taken today" : "Mark creatine as taken") +
           '</button>' +
           '<div class="hint">3–5g, once daily — pair with breakfast for consistency.</div>' +
+        '</div>' +
+        '<div class="section-label">&#9878;&#65039; Weight Converter</div>' +
+        '<div class="card converter-card">' +
+          '<div class="converter-row">' +
+            '<div class="converter-field"><span class="field-label">Kilograms</span><input class="text-input converter-input" id="conv-kg" type="number" inputmode="decimal" placeholder="0" /></div>' +
+            '<span class="converter-eq">=</span>' +
+            '<div class="converter-field"><span class="field-label">Pounds</span><input class="text-input converter-input" id="conv-lbs" type="number" inputmode="decimal" placeholder="0" /></div>' +
+          '</div>' +
+          '<div class="hint">1 kg = 2.20462 lb</div>' +
+        '</div>' +
+        '<div class="section-label">&#127939; Weight Stack Reference</div>' +
+        '<div class="card">' +
+          '<div class="hint">Most commercial weight-stack machines use about <strong>5kg (11 lb) per plate</strong>. Counting pins up the stack tells you the exact weight, even without a printed label.</div>' +
+          '<div class="stack-table">' + stackRows + '</div>' +
         '</div>' +
       '</div>'
     );
@@ -1026,21 +1079,21 @@ input, textarea, button { font-family: inherit; }
     return hasLog ? "done" : "missed";
   }
 
-  function buildCalendarWeeks(numWeeks) {
-    var today = new Date();
-    today.setHours(0, 0, 0, 0);
-    var currentWeekStart = new Date(today);
-    currentWeekStart.setDate(today.getDate() - today.getDay());
-    var gridStart = new Date(currentWeekStart);
-    gridStart.setDate(gridStart.getDate() - (numWeeks - 1) * 7);
+  function buildYearWeeks(year) {
+    var jan1 = new Date(year, 0, 1);
+    var dec31 = new Date(year, 11, 31);
+    var gridStart = new Date(jan1);
+    gridStart.setDate(gridStart.getDate() - jan1.getDay()); // back up to Sunday
+    var gridEnd = new Date(dec31);
+    gridEnd.setDate(gridEnd.getDate() + (6 - dec31.getDay())); // forward to Saturday
 
     var weeks = [];
-    for (var w = 0; w < numWeeks; w++) {
+    var cursor = new Date(gridStart);
+    while (cursor <= gridEnd) {
       var week = [];
       for (var d = 0; d < 7; d++) {
-        var day = new Date(gridStart);
-        day.setDate(gridStart.getDate() + w * 7 + d);
-        week.push(todayKey(day));
+        week.push(todayKey(cursor));
+        cursor.setDate(cursor.getDate() + 1);
       }
       weeks.push(week);
     }
@@ -1048,8 +1101,10 @@ input, textarea, button { font-family: inherit; }
   }
 
   function calendarHtml() {
-    var numWeeks = 12;
-    var weeks = buildCalendarWeeks(numWeeks);
+    var year = state.historyYear;
+    var weeks = buildYearWeeks(year);
+    var thisYear = new Date().getFullYear();
+
     var monthLabels = weeks.map(function (week, i) {
       var d = new Date(week[0] + "T00:00:00");
       if (i === 0) return monthAbbr(d.getMonth());
@@ -1061,11 +1116,12 @@ input, textarea, button { font-family: inherit; }
       return '<div class="cal-month-label">' + (monthLabels[i] || "") + '</div>';
     }).join("") + '</div>';
 
-    var grid = '<div class="cal-grid">' + weeks.map(function (week) {
+    var grid = '<div class="cal-grid" id="cal-grid-scroll">' + weeks.map(function (week) {
       return '<div class="cal-col">' + week.map(function (dateStr) {
-        var cls = getDayColorClass(dateStr);
+        var inYear = dateStr.slice(0, 4) === String(year);
+        var cls = inYear ? getDayColorClass(dateStr) : "pad";
         var isSelected = state.historyExpandedDate === dateStr;
-        return '<button class="cal-cell cal-' + cls + (isSelected ? " cal-selected" : "") + '" data-action="viewhistoryday" data-date="' + dateStr + '"></button>';
+        return '<button class="cal-cell cal-' + cls + (isSelected ? " cal-selected" : "") + '" data-action="viewhistoryday" data-date="' + dateStr + '"' + (inYear ? "" : " disabled") + '></button>';
       }).join("") + '</div>';
     }).join("") + '</div>';
 
@@ -1077,7 +1133,15 @@ input, textarea, button { font-family: inherit; }
       '</div>'
     );
 
-    return '<div class="cal-wrap">' + monthRow + grid + '</div>' + legend;
+    var yearNav = (
+      '<div class="cal-year-nav">' +
+        '<button class="arrow" data-action="prevyear">&#8249;</button>' +
+        '<span class="cal-year-label">' + year + '</span>' +
+        '<button class="arrow" data-action="nextyear"' + (year >= thisYear ? " disabled" : "") + '>&#8250;</button>' +
+      '</div>'
+    );
+
+    return yearNav + '<div class="cal-wrap">' + monthRow + grid + '</div>' + legend;
   }
 
   function dayDetailHtml() {
@@ -1109,39 +1173,121 @@ input, textarea, button { font-family: inherit; }
     );
   }
 
-  function progressionHtml() {
-    var byExercise = {};
+  function getExerciseHistory(name) {
+    var byDate = {};
     state.workoutLog.forEach(function (w) {
-      if (!byExercise[w.exercise]) byExercise[w.exercise] = {};
-      var cur = byExercise[w.exercise][w.date];
-      byExercise[w.exercise][w.date] = cur == null ? w.weight : Math.max(cur, w.weight);
+      if (w.exercise !== name) return;
+      var cur = byDate[w.date];
+      byDate[w.date] = cur == null ? w.weight : Math.max(cur, w.weight);
     });
+    var dates = Object.keys(byDate).sort();
+    return dates.map(function (d) { return { date: d, kg: byDate[d] }; });
+  }
 
-    var names = Object.keys(byExercise).sort();
-    if (names.length === 0) {
+  function progressionHtml() {
+    var allNamesMap = {};
+    state.workoutLog.forEach(function (w) { allNamesMap[w.exercise] = true; });
+    var allNames = Object.keys(allNamesMap).sort();
+
+    if (allNames.length === 0) {
       return '<div class="section-label">&#128200; Weight Progression</div><div class="card"><div class="empty-state">Log a few sessions to start tracking progression.</div></div>';
     }
 
-    var rows = names.map(function (name) {
-      var dates = Object.keys(byExercise[name]).sort();
-      var points = dates.map(function (d) { return { date: d, kg: byExercise[name][d] }; });
-      var collapsed = [];
-      points.forEach(function (p) {
-        if (collapsed.length === 0 || collapsed[collapsed.length - 1].kg !== p.kg) collapsed.push(p);
-      });
-      var chips = collapsed.map(function (p, i) {
-        var arrow = i === 0 ? "" : (p.kg > collapsed[i - 1].kg ? '<span class="prog-arrow prog-up">&#8599;</span>' : (p.kg < collapsed[i - 1].kg ? '<span class="prog-arrow prog-down">&#8600;</span>' : ""));
-        return arrow + '<span class="prog-chip"><span class="prog-kg">' + p.kg + 'kg</span><span class="prog-date">' + p.date.slice(5) + '</span></span>';
-      }).join("");
-      return (
-        '<div class="prog-row">' +
-          '<div class="prog-name">' + esc(name) + '</div>' +
-          '<div class="prog-chips">' + chips + '</div>' +
-        '</div>'
-      );
+    var todayIdx = new Date(todayKey() + "T00:00:00").getDay();
+    var todayNames = WEEK_PROGRAM[todayIdx].program.exercises.map(function (ex) { return ex.name; });
+
+    var displayNames = state.progressShowAll ? allNames : todayNames;
+
+    if (!state.progressExercise || displayNames.indexOf(state.progressExercise) === -1) {
+      state.progressExercise = displayNames[0];
+    }
+
+    var chips = displayNames.map(function (n) {
+      return '<button class="ex-picker-chip' + (n === state.progressExercise ? " active" : "") + '" data-action="selectprogressexercise" data-name="' + esc(n) + '">' + esc(n) + '</button>';
     }).join("");
 
-    return '<div class="section-label">&#128200; Weight Progression</div><div class="card prog-card">' + rows + '</div>';
+    var points = getExerciseHistory(state.progressExercise);
+    var graphHtml = lineGraphHtml(points);
+    var toggleLabel = state.progressShowAll ? "&#8592; Show today's workout only" : "Show all exercises &#8594;";
+
+    return (
+      '<div class="section-label">&#128200; Weight Progression &middot; ' + (state.progressShowAll ? "All Exercises" : "Today's Workout") + '</div>' +
+      '<div class="card">' +
+        '<div class="ex-picker-row">' + chips + '</div>' +
+        graphHtml +
+        '<button class="progress-toggle-link" data-action="toggleprogressshowall">' + toggleLabel + '</button>' +
+      '</div>'
+    );
+  }
+
+  function lineGraphHtml(points) {
+    if (points.length === 0) {
+      return '<div class="empty-state">No sets logged for this exercise yet.</div>';
+    }
+    if (points.length === 1) {
+      return '<div class="empty-state">Only one session logged so far: <strong>' + points[0].kg + 'kg</strong> on ' + points[0].date.slice(5) + '. Log more to see the trend.</div>';
+    }
+
+    var W = 320, H = 160, padL = 34, padR = 14, padT = 16, padB = 26;
+    var kgs = points.map(function (p) { return p.kg; });
+    var minKg = Math.min.apply(null, kgs);
+    var maxKg = Math.max.apply(null, kgs);
+    if (minKg === maxKg) { minKg -= 2.5; maxKg += 2.5; }
+    var kgPad = (maxKg - minKg) * 0.15;
+    minKg -= kgPad; maxKg += kgPad;
+    if (minKg < 0) minKg = 0;
+
+    function xFor(i) { return padL + (i / (points.length - 1)) * (W - padL - padR); }
+    function yFor(kg) { return padT + (1 - (kg - minKg) / (maxKg - minKg)) * (H - padT - padB); }
+
+    var pathD = points.map(function (p, i) { return (i === 0 ? "M" : "L") + xFor(i).toFixed(1) + "," + yFor(p.kg).toFixed(1); }).join(" ");
+    var areaD = pathD + " L" + xFor(points.length - 1).toFixed(1) + "," + (H - padB) + " L" + xFor(0).toFixed(1) + "," + (H - padB) + " Z";
+
+    var selectedIdx = state.progressPointIdx != null ? state.progressPointIdx : points.length - 1;
+    if (selectedIdx >= points.length) selectedIdx = points.length - 1;
+    var sel = points[selectedIdx];
+
+    var dots = points.map(function (p, i) {
+      var isSel = i === selectedIdx;
+      return '<circle class="graph-dot' + (isSel ? " graph-dot-active" : "") + '" cx="' + xFor(i).toFixed(1) + '" cy="' + yFor(p.kg).toFixed(1) + '" r="' + (isSel ? 5 : 3.5) + '" data-action="showprogresspoint" data-idx="' + i + '" />';
+    }).join("");
+
+    var xLabels = (
+      '<text class="graph-axis-label" x="' + xFor(0).toFixed(1) + '" y="' + (H - 8) + '" text-anchor="start">' + points[0].date.slice(5) + '</text>' +
+      '<text class="graph-axis-label" x="' + xFor(points.length - 1).toFixed(1) + '" y="' + (H - 8) + '" text-anchor="end">' + points[points.length - 1].date.slice(5) + '</text>'
+    );
+    var yLabels = (
+      '<text class="graph-axis-label" x="4" y="' + (yFor(maxKg) + 4).toFixed(1) + '">' + Math.round(maxKg) + '</text>' +
+      '<text class="graph-axis-label" x="4" y="' + (yFor(minKg) + 4).toFixed(1) + '">' + Math.round(minKg) + '</text>'
+    );
+
+    var gridLines = (
+      '<line class="graph-gridline" x1="' + padL + '" y1="' + yFor(maxKg).toFixed(1) + '" x2="' + (W - padR) + '" y2="' + yFor(maxKg).toFixed(1) + '" />' +
+      '<line class="graph-gridline" x1="' + padL + '" y1="' + yFor(minKg).toFixed(1) + '" x2="' + (W - padR) + '" y2="' + yFor(minKg).toFixed(1) + '" />'
+    );
+
+    var svg = (
+      '<svg class="line-graph-svg" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">' +
+        '<defs><linearGradient id="areaFade" x1="0" y1="0" x2="0" y2="1">' +
+          '<stop offset="0%" stop-color="var(--accent)" stop-opacity="0.35"/>' +
+          '<stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>' +
+        '</linearGradient></defs>' +
+        gridLines +
+        '<path d="' + areaD + '" fill="url(#areaFade)" stroke="none" />' +
+        '<path d="' + pathD + '" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />' +
+        dots +
+        yLabels + xLabels +
+      '</svg>'
+    );
+
+    var tooltip = (
+      '<div class="graph-tooltip">' +
+        '<span class="graph-tooltip-kg">' + sel.kg + 'kg</span>' +
+        '<span class="graph-tooltip-date">' + fullDateLabel(sel.date) + '</span>' +
+      '</div>'
+    );
+
+    return '<div class="line-graph-wrap">' + tooltip + svg + '</div>';
   }
 
   function computeStreak() {
@@ -1299,7 +1445,7 @@ input, textarea, button { font-family: inherit; }
   var NAV_ICONS = {
     today: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><circle cx="8" cy="15" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="15" r="1" fill="currentColor" stroke="none"/><circle cx="16" cy="15" r="1" fill="currentColor" stroke="none"/></svg>',
     workout: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5l11 11M4 8l3-3M20 16l-3 3M2 10l2-2M22 14l-2 2"/><rect x="2.5" y="8.5" width="4" height="4" rx="1" transform="rotate(-45 4.5 10.5)"/><rect x="17.5" y="13.5" width="4" height="4" rx="1" transform="rotate(-45 19.5 15.5)"/></svg>',
-    hydration: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5s7 8 7 13a7 7 0 1 1-14 0c0-5 7-13 7-13z"/></svg>',
+    tools: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
     meals: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3v7a2 2 0 0 1-2 2h0a2 2 0 0 1-2-2V3M5 12v9M12 3c1.5 0 2 2 2 4.5S13.5 12 12 12s-2-2-2-4.5S10.5 3 12 3zM12 12v9M19 3c-1.5 3-1.5 6 0 8v10"/></svg>',
     chores: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 12l2.5 2.5L16 9"/></svg>',
     schedule: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>',
@@ -1310,8 +1456,7 @@ input, textarea, button { font-family: inherit; }
     var items = [
       { id: "today", label: "Today" },
       { id: "workout", label: "Workout" },
-      { id: "hydration", label: "Hydrate" },
-      { id: "meals", label: "Meals" },
+      { id: "tools", label: "Tools" },
       { id: "schedule", label: "Week" },
       { id: "history", label: "History" },
     ];
@@ -1320,12 +1465,19 @@ input, textarea, button { font-family: inherit; }
     }).join("") + '</div></div>';
   }
 
+  function scrollCalendarToEnd() {
+    setTimeout(function () {
+      var el = document.getElementById("cal-grid-scroll");
+      if (el) el.parentElement.scrollLeft = el.scrollWidth;
+    }, 30);
+  }
+
   function render() {
     var body;
     if (state.tab === "today") body = todayTabHtml();
     else if (state.tab === "schedule") body = scheduleTabHtml();
     else if (state.tab === "workout") body = workoutTabHtml();
-    else if (state.tab === "hydration") body = hydrationTabHtml();
+    else if (state.tab === "tools") body = toolsTabHtml();
     else if (state.tab === "meals") body = mealsTabHtml();
     else if (state.tab === "chores") body = choresTabHtml();
     else if (state.tab === "history") body = historyTabHtml();
@@ -1337,6 +1489,7 @@ input, textarea, button { font-family: inherit; }
 
     attachHandlers();
     tickClock();
+    if (state.tab === "history" && state.historyYear === new Date().getFullYear()) scrollCalendarToEnd();
   }
 
   function attachHandlers() {
@@ -1373,6 +1526,20 @@ input, textarea, button { font-family: inherit; }
         if (e.key === "Enter") handleAction("addchore");
       });
     }
+
+    // live kg <-> lbs converter
+    var convKg = document.getElementById("conv-kg");
+    var convLbs = document.getElementById("conv-lbs");
+    if (convKg && convLbs) {
+      convKg.addEventListener("input", function () {
+        var kg = parseFloat(convKg.value);
+        convLbs.value = isNaN(kg) ? "" : (kg * 2.20462).toFixed(1);
+      });
+      convLbs.addEventListener("input", function () {
+        var lbs = parseFloat(convLbs.value);
+        convKg.value = isNaN(lbs) ? "" : (lbs / 2.20462).toFixed(1);
+      });
+    }
   }
 
   function handleAction(action, el) {
@@ -1384,9 +1551,6 @@ input, textarea, button { font-family: inherit; }
       goToDay(todayKey());
     } else if (action === "settab") {
       setTab(el.getAttribute("data-tab"));
-    } else if (action === "addwater") {
-      var ml = Number(el.getAttribute("data-ml"));
-      saveDayLog(Object.assign({}, state.dayLog, { waterMl: Math.max(0, state.dayLog.waterMl + ml) }));
     } else if (action === "togglecreatine") {
       saveDayLog(Object.assign({}, state.dayLog, { creatineTaken: !state.dayLog.creatineTaken }));
     } else if (action === "logprogram") {
@@ -1396,8 +1560,8 @@ input, textarea, button { font-family: inherit; }
       var reps = Number(repsInput.value) || 0;
       var kg = Math.max(MIN_KG, Number(kgInput.value) || MIN_KG);
       var entry = { id: String(Date.now()), date: state.dayKey, exercise: exName, sets: 1, reps: reps, weight: kg };
-      saveWorkoutLog([entry].concat(state.workoutLog));
       saveProgress(exName, kg, reps);
+      saveWorkoutLog([entry].concat(state.workoutLog));
       if (state.extraUnlocked[exName]) delete state.extraUnlocked[exName];
       var restSec = Number(el.getAttribute("data-rest")) || 60;
       var timerId = el.getAttribute("data-timerid");
@@ -1458,6 +1622,30 @@ input, textarea, button { font-family: inherit; }
     } else if (action === "togglesession") {
       var sessDate = el.getAttribute("data-date");
       state.expandedSessions[sessDate] = !state.expandedSessions[sessDate];
+      render();
+    } else if (action === "prevyear") {
+      state.historyYear -= 1;
+      state.historyExpandedDate = null;
+      render();
+      scrollCalendarToEnd();
+    } else if (action === "nextyear") {
+      if (state.historyYear < new Date().getFullYear()) {
+        state.historyYear += 1;
+        state.historyExpandedDate = null;
+        render();
+        scrollCalendarToEnd();
+      }
+    } else if (action === "selectprogressexercise") {
+      state.progressExercise = el.getAttribute("data-name");
+      state.progressPointIdx = null;
+      render();
+    } else if (action === "toggleprogressshowall") {
+      state.progressShowAll = !state.progressShowAll;
+      state.progressExercise = null;
+      state.progressPointIdx = null;
+      render();
+    } else if (action === "showprogresspoint") {
+      state.progressPointIdx = Number(el.getAttribute("data-idx"));
       render();
     } else if (action === "loadvideo") {
       var vid = el.getAttribute("data-vid");
